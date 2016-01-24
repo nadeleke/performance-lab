@@ -1,0 +1,120 @@
+01/07/2016 12-10-14PM:INFO:benchmark.py:16:<module>:benchmark up
+01/07/2016 12-10-14PM:INFO:benchmark.py:32:<module>:unpacking
+01/07/2016 12-10-14PM:INFO:benchmark.py:35:<module>:doing setup
+01/07/2016 12-10-41PM:INFO:benchmark.py:39:<module>:doing run
+01/08/2016 12-10-56PM:INFO:controller.py:17:<module>:controller up
+01/08/2016 12-10-56PM:INFO:emerge.py:167:_layman_sync_call:Executing layman -S
+01/08/2016 12-11-06PM:INFO:controller.py:40:<module>:updating backup tarball
+01/08/2016 12-11-07PM:INFO:controller.py:54:<module>:uploading results
+01/07/2016 12-10-14PM:INFO:watchdog.py:19:<module>:watchdog going to sleep
+01/08/2016 12-10-14PM:WARNING:watchdog.py:21:<module>:watchdog woke up, rebooting
+08/12/2015 02-17-57PM:INFO:benchmark.py:16:<module>:benchmark up
+08/12/2015 02-17-57PM:INFO:benchmark.py:32:<module>:unpacking
+08/12/2015 02-17-57PM:ERROR:benchmark.py:54:<module>:failed to run job, fatal, rebooting: Command 'tar xapf /datamill/user_package.tar.gz -C /datamill/work' returned non-zero exit status 2
+08/12/2015 02-18-44PM:INFO:controller.py:17:<module>:controller up
+08/12/2015 02-18-44PM:INFO:emerge.py:167:_layman_sync_call:Executing layman -S
+08/12/2015 02-18-50PM:INFO:controller.py:54:<module>:uploading results
+08/12/2015 02-17-57PM:INFO:watchdog.py:19:<module>:watchdog going to sleep
+08/12/2015 02-21-06PM:INFO:benchmark.py:16:<module>:benchmark up
+08/12/2015 02-21-06PM:INFO:benchmark.py:32:<module>:unpacking
+08/12/2015 02-21-06PM:INFO:benchmark.py:35:<module>:doing setup
+08/12/2015 02-21-35PM:INFO:benchmark.py:39:<module>:doing run
+08/13/2015 02-21-48PM:INFO:controller.py:17:<module>:controller up
+08/13/2015 02-21-48PM:INFO:emerge.py:167:_layman_sync_call:Executing layman -S
+08/13/2015 02-21-53PM:INFO:controller.py:54:<module>:uploading results
+08/12/2015 02-21-06PM:INFO:watchdog.py:19:<module>:watchdog going to sleep
+08/13/2015 02-21-06PM:WARNING:watchdog.py:21:<module>:watchdog woke up, rebooting
+09/01/2015 11-04-08AM:INFO:benchmark.py:16:<module>:benchmark up
+09/01/2015 11-04-08AM:INFO:benchmark.py:32:<module>:unpacking
+09/01/2015 11-04-08AM:INFO:benchmark.py:35:<module>:doing setup
+09/01/2015 11-04-12AM:INFO:benchmark.py:39:<module>:doing run
+09/01/2015 11-04-12AM:INFO:benchmark.py:43:<module>:doing collect
+09/01/2015 11-04-12AM:INFO:benchmark.py:47:<module>:verifying factor levels
+09/01/2015 11-04-12AM:INFO:factor.py:16:verify:Address_randomization factor verification succeed
+09/01/2015 11-04-12AM:INFO:factor.py:16:verify:Env_padding factor verification succeed
+09/01/2015 11-04-12AM:INFO:factor.py:16:verify:Opt_flag factor verification succeed
+09/01/2015 11-04-12AM:INFO:factor.py:16:verify:Autogroup factor verification succeed
+09/01/2015 11-04-12AM:INFO:factor.py:16:verify:Freq_scaling factor verification succeed
+09/01/2015 11-04-12AM:INFO:factor.py:16:verify:Swap factor verification succeed
+09/01/2015 11-04-12AM:INFO:factor.py:16:verify:Filesystem factor verification succeed
+09/01/2015 11-04-12AM:INFO:factor.py:16:verify:Sys_time factor verification succeed
+09/01/2015 11-04-12AM:INFO:factor.py:16:verify:Link_order factor verification succeed
+09/01/2015 11-04-12AM:INFO:factor.py:16:verify:Drop_caches factor verification succeed
+09/01/2015 11-04-12AM:INFO:factor.py:16:verify:Compiler factor verification succeed
+09/01/2015 11-04-12AM:INFO:benchmark.py:51:<module>:benchmark done!
+09/01/2015 11-04-53AM:INFO:controller.py:17:<module>:controller up
+09/01/2015 11-04-53AM:INFO:emerge.py:167:_layman_sync_call:Executing layman -S
+09/01/2015 11-05-04AM:INFO:controller.py:54:<module>:uploading results
+09/01/2015 11-04-08AM:INFO:watchdog.py:19:<module>:watchdog going to sleep
+10/06/2015 12-23-07PM:INFO:benchmark.py:16:<module>:benchmark up
+10/06/2015 12-23-07PM:INFO:benchmark.py:32:<module>:unpacking
+10/06/2015 12-23-07PM:INFO:benchmark.py:35:<module>:doing setup
+10/06/2015 12-23-35PM:INFO:benchmark.py:39:<module>:doing run
+10/06/2015 12-57-14PM:INFO:benchmark.py:43:<module>:doing collect
+10/06/2015 12-57-14PM:INFO:benchmark.py:47:<module>:verifying factor levels
+10/06/2015 12-57-14PM:INFO:factor.py:16:verify:Address_randomization factor verification succeed
+10/06/2015 12-57-14PM:INFO:factor.py:16:verify:Env_padding factor verification succeed
+10/06/2015 12-57-14PM:INFO:factor.py:16:verify:Opt_flag factor verification succeed
+10/06/2015 12-57-14PM:INFO:factor.py:16:verify:Autogroup factor verification succeed
+10/06/2015 12-57-14PM:INFO:factor.py:16:verify:Freq_scaling factor verification succeed
+10/06/2015 12-57-14PM:INFO:factor.py:16:verify:Swap factor verification succeed
+10/06/2015 12-57-14PM:INFO:factor.py:16:verify:Filesystem factor verification succeed
+10/06/2015 12-57-14PM:INFO:factor.py:16:verify:Sys_time factor verification succeed
+10/06/2015 12-57-14PM:INFO:factor.py:16:verify:Link_order factor verification succeed
+10/06/2015 12-57-14PM:INFO:factor.py:16:verify:Drop_caches factor verification succeed
+10/06/2015 12-57-14PM:INFO:factor.py:16:verify:Compiler factor verification succeed
+10/06/2015 12-57-14PM:INFO:benchmark.py:51:<module>:benchmark done!
+10/06/2015 12-57-53PM:INFO:controller.py:17:<module>:controller up
+10/06/2015 12-57-53PM:INFO:emerge.py:167:_layman_sync_call:Executing layman -S
+10/06/2015 12-58-04PM:INFO:controller.py:54:<module>:uploading results
+10/06/2015 12-23-07PM:INFO:watchdog.py:19:<module>:watchdog going to sleep
+10/25/2015 09-50-57PM:INFO:controller.py:17:<module>:controller up
+10/25/2015 09-50-57PM:INFO:emerge.py:167:_layman_sync_call:Executing layman -S
+10/25/2015 09-51-08PM:INFO:worker.py:60:__init__:hello file needs update, remaking hello file
+10/25/2015 09-51-08PM:INFO:factor.py:16:verify:Swap factor verification succeed
+10/25/2015 09-51-08PM:INFO:factor.py:16:verify:Swap factor verification succeed
+10/25/2015 09-51-08PM:INFO:factor.py:16:verify:Link_order factor verification succeed
+10/25/2015 09-51-08PM:INFO:factor.py:16:verify:Link_order factor verification succeed
+10/25/2015 09-51-08PM:INFO:factor.py:16:verify:Link_order factor verification succeed
+10/25/2015 09-51-08PM:ERROR:factor.py:19:verify:Freq_scaling factor verification failed
+10/25/2015 09-51-08PM:INFO:factor.py:16:verify:Freq_scaling factor verification succeed
+10/25/2015 09-51-08PM:INFO:factor.py:16:verify:Fpie factor verification succeed
+10/25/2015 09-51-08PM:INFO:factor.py:16:verify:Fpie factor verification succeed
+10/25/2015 09-51-30PM:INFO:factor.py:16:verify:Env_padding factor verification succeed
+10/25/2015 09-51-30PM:INFO:factor.py:16:verify:Env_padding factor verification succeed
+10/25/2015 09-51-30PM:INFO:factor.py:16:verify:Env_padding factor verification succeed
+10/25/2015 09-51-30PM:INFO:factor.py:16:verify:Env_padding factor verification succeed
+10/25/2015 09-51-30PM:INFO:factor.py:16:verify:Drop_caches factor verification succeed
+10/25/2015 09-51-30PM:INFO:factor.py:16:verify:Drop_caches factor verification succeed
+10/25/2015 09-51-30PM:ERROR:factor.py:19:verify:Autogroup factor verification failed
+10/25/2015 09-51-30PM:INFO:factor.py:16:verify:Autogroup factor verification succeed
+10/25/2015 09-51-30PM:INFO:factor.py:16:verify:Address_randomization factor verification succeed
+10/25/2015 09-51-30PM:INFO:factor.py:16:verify:Address_randomization factor verification succeed
+10/25/2015 09-51-30PM:INFO:controller.py:40:<module>:updating backup tarball
+10/25/2015 09-53-20PM:INFO:controller.py:45:<module>:registering with master node
+10/25/2015 10-03-26PM:INFO:controller.py:54:<module>:uploading results
+10/27/2015 01-54-02AM:INFO:controller.py:17:<module>:controller up
+10/27/2015 01-54-02AM:INFO:emerge.py:167:_layman_sync_call:Executing layman -S
+10/27/2015 01-54-07AM:INFO:worker.py:60:__init__:hello file needs update, remaking hello file
+10/27/2015 01-54-08AM:INFO:factor.py:16:verify:Swap factor verification succeed
+10/27/2015 01-54-08AM:INFO:factor.py:16:verify:Swap factor verification succeed
+10/27/2015 01-54-08AM:INFO:factor.py:16:verify:Link_order factor verification succeed
+10/27/2015 01-54-08AM:INFO:factor.py:16:verify:Link_order factor verification succeed
+10/27/2015 01-54-08AM:INFO:factor.py:16:verify:Link_order factor verification succeed
+10/27/2015 01-54-08AM:ERROR:factor.py:19:verify:Freq_scaling factor verification failed
+10/27/2015 01-54-08AM:INFO:factor.py:16:verify:Freq_scaling factor verification succeed
+10/27/2015 01-54-08AM:INFO:factor.py:16:verify:Fpie factor verification succeed
+10/27/2015 01-54-08AM:INFO:factor.py:16:verify:Fpie factor verification succeed
+10/27/2015 01-54-30AM:INFO:factor.py:16:verify:Env_padding factor verification succeed
+10/27/2015 01-54-30AM:INFO:factor.py:16:verify:Env_padding factor verification succeed
+10/27/2015 01-54-30AM:INFO:factor.py:16:verify:Env_padding factor verification succeed
+10/27/2015 01-54-30AM:INFO:factor.py:16:verify:Env_padding factor verification succeed
+10/27/2015 01-54-30AM:INFO:factor.py:16:verify:Drop_caches factor verification succeed
+10/27/2015 01-54-30AM:INFO:factor.py:16:verify:Drop_caches factor verification succeed
+10/27/2015 01-54-30AM:ERROR:factor.py:19:verify:Autogroup factor verification failed
+10/27/2015 01-54-30AM:INFO:factor.py:16:verify:Autogroup factor verification succeed
+10/27/2015 01-54-30AM:INFO:factor.py:16:verify:Address_randomization factor verification succeed
+10/27/2015 01-54-30AM:INFO:factor.py:16:verify:Address_randomization factor verification succeed
+10/27/2015 01-54-30AM:INFO:controller.py:40:<module>:updating backup tarball
+10/27/2015 01-56-20AM:INFO:controller.py:45:<module>:registering with master node
+10/27/2015 02-06-21AM:INFO:controller.py:54:<module>:uploading results
