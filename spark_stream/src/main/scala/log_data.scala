@@ -8,17 +8,19 @@ import org.apache.spark.SparkContext
 import org.apache.spark.sql._
 import com.datastax.spark.connector._
 
-import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.sql.Timestamp
+import java.text.DateFormat
+import java.text.ParseException
+import java.text.SimpleDateFormat
+import java.util
+import java.sql
 
 object LogStreaming {
-  def convert_date(dateString: String):Date = {
+  def convert_date(dateString: String):java.sql.Date = {
     val formatter:DateFormat = new SimpleDateFormat("MM/dd/yyyy HH-mm-ssaa")
-    val date:Date = formatter.parse(dateString)
-    date
+    val date:java.util.Date = formatter.parse(dateString)
+    val sqlDate = new java.sql.Date(date.getTime())
+    sqlDate
   }
 
   def main(args: Array[String]) {
@@ -66,7 +68,7 @@ object LogStreaming {
   }
 }
 
-case class LogEntry(date: Date, logging_level: String, content: String)
+case class LogEntry(date: java.sql.Date, logging_level: String, content: String)
 
 /** Lazily instantiated singleton instance of SQLContext */
 object SQLContextSingleton {
