@@ -58,7 +58,7 @@ object LogStreaming {
 //        .agg("retweeted" -> "count")
 
       log_entries_DF.write.format("org.apache.spark.sql.cassandra")
-        .options(Map("table" -> "log_prototype", "keyspace" -> "datamill")).mode(SaveMode.Append).save()
+        .options(Map("table" -> "log", "keyspace" -> "datamill_test")).mode(SaveMode.Append).save()
     }
 
 
@@ -68,7 +68,7 @@ object LogStreaming {
   }
 }
 
-case class LogEntry(date: java.sql.Date, logging_level: String, content: String)
+case class LogEntry(time: java.sql.Date, level: String, message: String)
 
 /** Lazily instantiated singleton instance of SQLContext */
 object SQLContextSingleton {
