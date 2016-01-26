@@ -19,7 +19,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.streaming.Seconds
 import org.apache.spark.streaming.StreamingContext
 
-object ExperimentResultStreaming {
+object ExperimentResultStream {
 
   val cfDataBytes = Bytes.toBytes("data")
 
@@ -80,6 +80,7 @@ object ExperimentResultStreaming {
 
     // Create context with 2 second batch interval
     val sparkConf = new SparkConf().setAppName("spark_stream")
+    val sc = new SparkContext(sparkConf)
     val stream_sc = new StreamingContext(sparkConf, Seconds(2))
 
     // Create direct kafka stream with brokers and topics
@@ -91,11 +92,9 @@ object ExperimentResultStreaming {
       val lines = rdd.map(_._2)
       // parse the lines into job objects
       val jobRDD = lines.map(Job.parseJob)
-      // make a run time map with experiment id and worker id
-      val runTimeMap = jobRDD.map( j => (j.experiment_id + " " + j.worker_id, j.run_time))
-      // group by experiment and worker
+      // convert job data to put object and write to HBase
+      jobRDD.map(Job.convertToPut).saveAsHadoopDataset(jobConfig)
     }
-
 
     // Start the computation
     stream_sc.start()
