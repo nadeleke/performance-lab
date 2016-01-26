@@ -15,7 +15,7 @@ import java.text.SimpleDateFormat
 import java.util
 import java.sql
 
-object LogStreaming {
+object LogStream {
   def convert_date(dateString: String):java.sql.Date = {
     val formatter:DateFormat = new SimpleDateFormat("MM/dd/yyyy HH-mm-ssaa")
     val date:java.util.Date = formatter.parse(dateString)
