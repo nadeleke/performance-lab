@@ -4,6 +4,10 @@ version := "1.0"
 
 scalaVersion := "2.10.4"
 
+resolvers += "Apache HBase" at "https://repository.apache.org/content/repositories/releases"
+
+resolvers += "Thrift" at "http://people.apache.org/~rawson/repo/"
+
 libraryDependencies ++= Seq(
   "org.apache.spark" % "spark-core_2.10" % "1.5.2" % "provided",
   "org.apache.spark" % "spark-sql_2.10" % "1.5.2" % "provided",
@@ -11,6 +15,11 @@ libraryDependencies ++= Seq(
   "org.apache.spark" % "spark-streaming_2.10" % "1.3.0" % "provided",
   "org.apache.spark" % "spark-streaming-kafka_2.10" % "1.3.0",
   "net.debasishg" %% "redisclient" % "3.0"
+)
+
+libraryDependencies ++= Seq(
+  "org.apache.hadoop" % "hadoop-core" % "0.20.2",
+  "org.apache.hbase" % "hbase" % "0.90.4"
 )
 
 mergeStrategy in assembly := {
