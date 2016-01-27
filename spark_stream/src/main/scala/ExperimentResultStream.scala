@@ -30,8 +30,7 @@ object ExperimentResultStream {
     // function to parse line of csv data into Job class
     def parseJob(str: String): Job = {
       val p = str.split(",")
-      Job(p(0).toInt, p(1).toInt, p(3).toInt, p(5).toInt, p(8).toDouble,
-        p(9).toDouble, p(10).toDouble, p(11), p(12).toInt, p(13).toInt, p(14).toInt, p(15).toInt, p(16).toInt, p(17).toInt, p(18), p(19), p(21), p(24), p(25), p(26), p(27), p(28))
+      Job(p(0).toInt, p(1).toInt, p(3).toInt, p(5).toInt, p(8).toDouble, p(9).toDouble, p(10).toDouble, p(11), p(12).toInt, p(13).toInt, p(14).toInt, p(15).toInt, p(16).toInt, p(17).toInt, p(18), p(19), p(21), p(24), p(25), p(26), p(27), p(28))
     }
 
     //  Convert a row of job object data to an HBase put object
@@ -75,12 +74,11 @@ object ExperimentResultStream {
     jobConfig.set(TableOutputFormat.OUTPUT_TABLE, tableName)
 
     val brokers = "ec2-52-34-250-158.us-west-2.compute.amazonaws.com:9092"
-    val topics = "logs"
+    val topics = "results"
     val topicsSet = topics.split(",").toSet
 
     // Create context with 2 second batch interval
     val sparkConf = new SparkConf().setAppName("spark_stream")
-    val sc = new SparkContext(sparkConf)
     val stream_sc = new StreamingContext(sparkConf, Seconds(2))
 
     // Create direct kafka stream with brokers and topics
