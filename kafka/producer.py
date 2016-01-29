@@ -58,8 +58,7 @@ if __name__=="__main__":
             experiment_id = file_name_parts[1]
             first_line = True
             with open('{}experiment_{}/{}_results_index.csv'.format(RESULTS_DIR, experiment_id, experiment_id)) as result_csv:
-                reader = csv.reader(result_csv, delimiter=',')
-                for row in reader:
+                for row in result_csv:
                     if first_line:
                         first_line = False
                         continue
