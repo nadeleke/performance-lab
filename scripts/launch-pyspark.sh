@@ -1,1 +1,2 @@
-$SPARK_HOME/bin/pyspark --packages com.databricks:spark-csv_2.10:1.3.0 --packages TargetHolding:pyspark-cassandra:0.2.5 --conf spark.cassandra.connection.host=ec2-52-89-35-171.us-west-2.compute.amazonaws.com,ec2-52-10-210-120.us-west-2.compute.amazonaws.com,ec2-52-24-119-197.us-west-2.compute.amazonaws.com,ec2-52-34-219-20.us-west-2.compute.amazonaws.com>/tmp/spark.out
+#!/usr/bin/env bash
+$SPARK_HOME/bin/pyspark --packages com.databricks:spark-csv_2.10:1.3.0,TargetHolding:pyspark-cassandra:0.2.5 --conf spark.cassandra.connection.host="172.31.3.41,172.31.3.44,172.31.3.42,172.31.3.43">/tmp/spark.out

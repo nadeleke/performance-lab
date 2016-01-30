@@ -1,8 +1,11 @@
 import csv, tarfile, os
 import pyspark_cassandra
 from pyspark_cassandra import CassandraSparkContext
+from pyspark import SparkConf, SparkContext
 from pyspark.sql import SQLContext
 from pyspark.sql.functions import *
+conf = SparkConf().setAppName("ExperimentStats").setMaster("spark://ip-172-31-3-41:7077")
+sc = SparkContext(conf=conf)
 sqlContext = SQLContext(sc)
 
 RESULTS_DIR='/home/yuguang/Downloads/' #TODO change to HDFS folder
@@ -29,12 +32,18 @@ for tar_file in os.listdir(RESULTS_DIR):
                     break
         df = sqlContext.read.format('com.databricks.spark.csv').options(header='true', inferschema='true').load('{}experiment_{}/{}_results_index.csv'.format(RESULTS_DIR, experiment_id, experiment_id))
         for field in [i for i in header if not i.endswith('time')]:
-            if df.select(field).distinct().count() > 1:
+            if field.startswith('hw') or field.startswith('sw') and df.select(field).distinct().count() > 1:
+                table_name = 'avg_by_' + field
+                df = df.groupBy('experiment_id', field).agg({'setup_time': "avg",'collect_time': "avg",'run_time': "avg"})
                 for time_field in ['setup', 'run', 'collect']:
                     performance_metric_field = time_field + '_time'
-                    table_name = 'avg_by_' + field
-                    df.groupBy(field, 'experiment_id').agg({performance_metric_field: "avg"}).rdd.saveToCassandra(DATABASE, table_name)
-
+                    df = df.withColumnRenamed('avg({})'.format(performance_metric_field), performance_metric_field)
+                # df.show()
+                # to avoid bug when saving rdd directly using saveToCassandra
+                def flatten(x):
+                  x_dict = x.asDict()
+                  return x_dict
+                sc.parallelize(df.map(flatten)).saveToCassandra(DATABASE, table_name)
 
 # df.groupBy('sw_swap', 'experiment_id').count('sw_swap').show()
 # df.groupBy('sw_swap', 'experiment_id').agg({"setup_time":"avg"}).rdd
