@@ -46,6 +46,10 @@ if __name__=="__main__":
     producer = SimpleProducer(kafka)
 
     os.chdir(RESULTS_DIR)
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Interfaces with a real world system where files are stored in a folder
+    # Each tar file contains a folder which contains a csv file
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     for tar_file in os.listdir(RESULTS_DIR):
         if tar_file.endswith('.tar'):
             print tar_file
@@ -64,3 +68,4 @@ if __name__=="__main__":
                         continue
                     producer.send_messages(args.topic, row)
                     sleep(1.0*int(args.delay)/1000.0)
+            os.rmdir(tar_file.replace('.tar', ''))
