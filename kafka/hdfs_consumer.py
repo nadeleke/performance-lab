@@ -62,9 +62,11 @@ class Consumer(object):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Read a Kafka stream and write files to HDFS")
+    parser.add_argument("host", help="Public IP address of a Kafka node")
     parser.add_argument("topic", help="Kafka topic to feed")
+    parser.add_argument("-p", "--port", default=9092, help="port for zookeeper, default 9092")
     args = parser.parse_args()
     print "\nConsuming topic: [%s] into HDFS" % args.topic
-    cons = Consumer(addr="localhost:9092", group="hdfs", topic=args.topic)
+    cons = Consumer(addr="{0}:{1}".format(args.host, args.port), group="hdfs", topic=args.topic)
     cons.consume_topic()
     cons.save_to_hdfs()
