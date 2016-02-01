@@ -40,7 +40,7 @@ if __name__=="__main__":
     parser.add_argument("topic", help="Kafka topic to feed")
     parser.add_argument("-p", "--port", default=9092, help="port for zookeeper, default 9092")
     parser.add_argument("-c", "--chunksize", default=100, help="Number of messages to send at one time,  default 100")
-    parser.add_argument("-d", "--delay", default=0, help="Delay in ms between shipment of chunks to Kafka, default 0")
+    parser.add_argument("-d", "--delay", default=1000, help="Delay in ms between shipment of chunks to Kafka, default 0")
     args = parser.parse_args()
 
     # get a client
