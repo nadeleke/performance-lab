@@ -4,9 +4,12 @@
 #
 
 import argparse
-from kafka import SimpleProducer, KafkaClient
+import os
+import tarfile
 from time import sleep
-import csv, tarfile, os
+
+from kafka import SimpleProducer, KafkaClient
+
 
 def chunk_iterable(A,n):
     '''An iterable that contains the iterates of A divided into lists of size n.
@@ -51,21 +54,26 @@ if __name__=="__main__":
     # Each tar file contains a folder which contains a csv file
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     for tar_file in os.listdir(RESULTS_DIR):
-        if tar_file.endswith('.tar'):
-            print tar_file
-            tar = tarfile.open(tar_file)
-            tar.extractall()
-            tar.close()
-            file_name = os.path.basename(tar_file)
-            file_name_parts = file_name.split('_')
-            folder_name = file_name_parts[0] + '_' + file_name_parts[1]
-            experiment_id = file_name_parts[1]
-            first_line = True
-            with open('{}experiment_{}/{}_results_index.csv'.format(RESULTS_DIR, experiment_id, experiment_id)) as result_csv:
-                for row in result_csv:
-                    if first_line:
-                        first_line = False
-                        continue
-                    producer.send_messages(args.topic, row)
-                    sleep(1.0*int(args.delay)/1000.0)
-            os.rmdir(tar_file.replace('.tar', ''))
+        if tar_file.endswith('_results.tar') and tar_file.startswith(
+'experiment_'):
+            try:
+                print tar_file
+                tar = tarfile.open(tar_file)
+                tar.extractall()
+                tar.close()
+                file_name = os.path.basename(tar_file)
+                file_name_parts = file_name.split('_')
+                folder_name = file_name_parts[0] + '_' + file_name_parts[1]
+                experiment_id = file_name_parts[1]
+                first_line = True
+                with open('{}experiment_{}/{}_results_index.csv'.format(RESULTS_DIR, experiment_id, experiment_id)) as result_csv:
+                    for row in result_csv:
+                        if first_line:
+                            first_line = False
+                            continue
+                        producer.send_messages(args.topic, row)
+                        sleep(1.0*int(args.delay)/1000.0)
+                os.rmdir(tar_file.replace('.tar', ''))
+            except:
+                # older experiment files have a different structure
+                pass
