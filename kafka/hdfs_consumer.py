@@ -1,8 +1,10 @@
+import argparse
+import os
 import time
+
 from kafka.client import KafkaClient
 from kafka.consumer import SimpleConsumer
-import os
-import argparse
+
 
 class Consumer(object):
 
@@ -33,7 +35,7 @@ class Consumer(object):
                 for message in messages:
                     self.temp_file.write(message.message.value + "\n")
 
-                if self.temp_file.tell() > 2000:
+                if self.temp_file.tell() > 20000:
                     self.save_to_hdfs()
 
                 self.consumer.commit()
@@ -51,7 +53,7 @@ class Consumer(object):
         self.block_cnt += 1
 
         # place blocked messages into history and cached folders on hdfs
-        os.system("sudo -u hdfs hdfs dfs -put %s %s" % (self.temp_file_path, hadoop_path))
+        os.system("sudo hdfs dfs -put %s %s" % (self.temp_file_path, hadoop_path))
         os.remove(self.temp_file_path)
 
         timestamp = time.strftime('%Y%m%d%H%M%S')
