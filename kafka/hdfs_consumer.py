@@ -10,7 +10,7 @@ class Consumer(object):
 
     def __init__(self, addr, group, topic):
         self.client = KafkaClient(addr)
-        self.consumer = SimpleConsumer(self.client, group, topic, max_buffer_size=1310720000)
+        self.consumer = SimpleConsumer(self.client, group, topic, max_buffer_size=1310720000, auto_offset_reset='smallest')
         self.temp_file_path = None
         self.temp_file = None
         self.topic = topic
@@ -53,7 +53,7 @@ class Consumer(object):
         self.block_cnt += 1
 
         # place blocked messages into history and cached folders on hdfs
-        os.system("sudo hdfs dfs -put %s %s" % (self.temp_file_path, hadoop_path))
+        os.system("hdfs dfs -put %s %s" % (self.temp_file_path, hadoop_path))
         os.remove(self.temp_file_path)
 
         timestamp = time.strftime('%Y%m%d%H%M%S')
