@@ -3,5 +3,51 @@
 {% block title %}The current time{% endblock %}
 
 {% block content %}
-<p>It is now {{ current_date }}.</p>
+  <SELECT id="list">
+  {% for factor in factors %}
+    <OPTION VALUE="{{ factor }}">{{ factor }}</option>
+  {% endfor %}
+  </SELECT>
+  <button id="change">Refresh Table</button>
+  <div id="container" style="height: 400px"></div>
+  <script>
+    function getValues(factor_data) {
+      var values = _.map(factor_data, function (item){
+        return item.run;
+      });
+      return values;
+    }
+
+    function getLabels(factor_data) {
+      var labels = _.map(factor_data, function (item) {
+        return item.level;
+      });
+      return labels;
+    }
+    var data = {{ json | safe }};
+    var available_factor = '{{ first_factor | safe }}';
+    var options = {
+      chart: {
+        renderTo: 'container',
+        defaultSeriesType: 'spline'
+      },
+      xAxis: {
+        categories: getLabels(data[available_factor]),
+      },
+      series: [{name: available_factor, data: getValues(data[available_factor])}]
+    };
+    var chart = new Highcharts.Chart(options);
+
+    $("#list").on('change', function () {
+      var selVal = $("#list").val();
+      if (selVal == available_factor || selVal == '') {
+        options.series = [{name: selVal, data: getValues(data[available_factor])}]
+      }
+      else {
+        options.series = [{name: selVal, data: getValues(data[selVal])}]
+      }
+      var chart = new Highcharts.Chart(options);
+    });
+
+  </script>
 {% endblock %}
