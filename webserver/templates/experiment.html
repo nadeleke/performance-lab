@@ -32,7 +32,7 @@
         defaultSeriesType: 'spline'
       },
       xAxis: {
-        categories: getLabels(data[available_factor]),
+        categories: getLabels(data[available_factor])
       },
       series: [{name: available_factor, data: getValues(data[available_factor])}]
     };
@@ -41,9 +41,15 @@
     $("#list").on('change', function () {
       var selVal = $("#list").val();
       if (selVal == available_factor || selVal == '') {
+        options.xAxis = {
+          categories: getLabels(data[available_factor])
+        };
         options.series = [{name: selVal, data: getValues(data[available_factor])}]
       }
       else {
+        options.xAxis = {
+          categories: getLabels(data[selVal])
+        };
         options.series = [{name: selVal, data: getValues(data[selVal])}]
       }
       var chart = new Highcharts.Chart(options);
