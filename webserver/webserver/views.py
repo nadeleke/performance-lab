@@ -2,6 +2,7 @@ from django.http import HttpResponse
 from models import *
 import simplejson as json
 from django.http import JsonResponse
+from django.shortcuts import render
 
 def attrs(model):
     for field in model._meta.fields:
@@ -21,6 +22,5 @@ def experiment(request, id):
                 'collect': i.collect_time,
                 'run': i.run_time
             })
-    # json.dumps(avg_dict)
 
-    return JsonResponse(avg_dict)
+    return render(request, 'experiment.html', context={'json': json.dumps(avg_dict)})
