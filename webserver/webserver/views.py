@@ -15,9 +15,9 @@ def experiment(request, id):
     for model in [avg_hw_cpu_arch, avg_hw_cpu_mhz, avg_hw_gpu_mhz, avg_hw_num_cpus, avg_hw_page_sz, avg_hw_ram_mhz, avg_hw_ram_sz, avg_sw_address_randomization, avg_sw_autogroup, avg_sw_compiler, avg_sw_drop_caches, avg_sw_env_padding, avg_sw_filesystem, avg_sw_freq_scaling, avg_sw_link_order, avg_sw_opt_flag, avg_sw_swap, avg_sw_sys_time]:
         items = model.objects.filter(experiment_id=id)
         for i in items:
-            if not first_factor:
-                first_factor = model.__name__
             field = model.__name__.replace('avg_', '')
+            if not first_factor:
+                first_factor = field
             avg_dict.setdefault(field, [])
             avg_dict[field].append({
                 'level': getattr(i, field),

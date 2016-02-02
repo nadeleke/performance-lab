@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="http://code.highcharts.com/highcharts.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
   <script src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
+  <script src="http://code.highcharts.com/highcharts.js"></script>
   <!-- Latest compiled and minified CSS -->
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
 
@@ -13,6 +14,32 @@
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
   <meta charset="UTF-8">
   <title>{% block title %}{% endblock %}</title>
+  <style>
+    select {
+      margin: 50px;
+      border: 1px solid #111;
+      background: transparent;
+      width: 150px;
+      padding: 5px 35px 5px 5px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      height: 34px;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      background: url(http://www.stackoverflow.com/favicon.ico) 96% / 15% no-repeat #eee;
+    }
+
+    /*target Internet Explorer 9 and Internet Explorer 10:*/
+
+    @media screen and (min-width: 0\0
+    ) {
+      select {
+        background: none;
+        padding: 5px;
+      }
+    }
+  </style>
 </head>
 <body>
   {% block content %}{% endblock %}
