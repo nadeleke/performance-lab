@@ -22,3 +22,10 @@ class avg_{}(Model):
     run_time = columns.Float()
     collect_time = columns.Float()""".format(factor, factor, factor, factor)
         print s
+
+l=[]
+for factor in settings.CSV_HEADER:
+    if factor.startswith('hw') or factor.startswith('sw'):
+        l.append('avg_'+factor)
+
+print 'tables have been generated for ', ', '.join(l)
