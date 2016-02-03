@@ -1,12 +1,13 @@
 import os
-import sleep
 import tarfile
-import tinys3
+from time import sleep
+
+import boto3
 
 aws_access_key = os.getenv('AWS_ACCESS_KEY_ID', 'default')
 aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY', 'default')
 # Creating a simple connection
-conn = tinys3.Connection(aws_access_key, aws_secret_access_key)
+s3_client = boto3.client('s3')
 
 RESULTS_DIR='/var/datamill/results/'
 
@@ -22,11 +23,8 @@ for tar_file in os.listdir(RESULTS_DIR):
             file_name_parts = file_name.split('_')
             folder_name = file_name_parts[0] + '_' + file_name_parts[1]
             experiment_id = file_name_parts[1]
-            first_line = True
-            # Uploading a single file
-            file_name = '{}experiment_{}/{}_results_index.csv'.format(RESULTS_DIR, experiment_id, experiment_id)
-            f = open(file_name,'rb')
-            conn.upload(file_name,f,'yuguang-dataset')
+            csv_path = '{}experiment_{}/{}_results_index.csv'.format(RESULTS_DIR, experiment_id, experiment_id)
+            s3_client.upload_file(file_name, 'yuguang-dataset', '{}_results_index.csv'.format(experiment_id))
             sleep(2)
             os.rmdir(tar_file.replace('.tar', ''))
         except:
