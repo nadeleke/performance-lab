@@ -24,8 +24,8 @@ for tar_file in os.listdir(RESULTS_DIR):
             file_name_parts = file_name.split('_')
             folder_name = file_name_parts[0] + '_' + file_name_parts[1]
             experiment_id = file_name_parts[1]
-            csv_path = '{}experiment_{}/{}_results_index.csv'.format(RESULTS_DIR, experiment_id, experiment_id)
-            s3_client.upload_file(file_name, 'yuguang-dataset', '{}_results_index.csv'.format(experiment_id))
+            csv_path = '{}_results_index.csv'.format(experiment_id)
+            s3_client.upload_file(csv_path, 'yuguang-data', csv_path)
             sleep(2)
             os.rmdir(tar_file.replace('.tar', ''))
         except:
