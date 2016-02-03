@@ -5,6 +5,8 @@ from pyspark import SparkConf, SparkContext
 from pyspark.sql import SQLContext
 from pyspark.sql.functions import *
 import settings
+import boto3, re
+s3 = boto3.resource('s3')
 conf = SparkConf().setAppName("ExperimentStats").setMaster("spark://ip-172-31-3-41:7077")
 sc = SparkContext(conf=conf)
 sqlContext = SQLContext(sc)
@@ -14,11 +16,14 @@ DATABASE = 'datamill'
 
 
 # os.chdir(RESULTS_DIR)
-# file_list = os.listdir(RESULTS_DIR)
-file_list = ['1525_results_index.csv']
-for file_name in file_list:
-    header = settings.CSV_HEADER
-    df = sqlContext.read.format('com.databricks.spark.csv').options(header='true', inferschema='true').load('{}{}'.format(RESULTS_DIR, file_name))
+my_bucket = s3.Bucket('yuguang-data')
+file_list = my_bucket.objects.all()
+for file in file_list:
+    matches = re.search('^\d{1,4}_results_index.csv', file.key)
+    if not matches:
+        continue
+    df = sqlContext.read.format('com.databricks.spark.csv').options(header='true', inferschema='true').load('s3n://yuguang-data/{}'.format(file.key))
+    header = df.columns
     for field in [i for i in header if not i.endswith('time')]:
         if field.startswith('hw') or field.startswith('sw') and df.select(field).distinct().count() > 1:
             table_name = 'avg_' + field
