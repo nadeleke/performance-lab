@@ -11,6 +11,7 @@ s3_client = boto3.client('s3')
 
 RESULTS_DIR='/var/datamill/results/'
 
+os.chdir(RESULTS_DIR)
 for tar_file in os.listdir(RESULTS_DIR):
     if tar_file.endswith('_results.tar') and tar_file.startswith(
 'experiment_'):
