@@ -4,7 +4,6 @@ from pyspark_cassandra import CassandraSparkContext
 from pyspark import SparkConf, SparkContext
 from pyspark.sql import SQLContext
 from pyspark.sql.functions import *
-import settings
 import boto3, re
 s3 = boto3.resource('s3')
 conf = SparkConf().setAppName("ExperimentStats").setMaster("spark://ip-172-31-3-41:7077")
@@ -23,6 +22,8 @@ for file in file_list:
     if not matches:
         continue
     df = sqlContext.read.format('com.databricks.spark.csv').options(header='true', inferschema='true').load('s3n://yuguang-data/{}'.format(file.key))
+    # drop rows that have null values in these columns
+    df = df.dropna(how='any', subset=['setup_time', 'collect_time', 'run_time'])
     header = df.columns
     for field in [i for i in header if not i.endswith('time')]:
         if field.startswith('hw') or field.startswith('sw') and df.select(field).distinct().count() > 1:
@@ -36,6 +37,8 @@ for file in file_list:
             def flatten(x):
               x_dict = x.asDict()
               return x_dict
+            # drop rows with null values
+            avg_df = avg_df.na.drop()
             avg_df.map(flatten).saveToCassandra(DATABASE, table_name)
 
 # df.groupBy('sw_swap', 'experiment_id').count('sw_swap').show()
