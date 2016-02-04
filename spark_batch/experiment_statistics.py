@@ -25,8 +25,8 @@ for file in file_list:
         df = sqlContext.read.format('com.databricks.spark.csv').options(header='true', inferschema='true').load('s3n://yuguang-data/{}'.format(file.key))
         # drop rows that have null values in these columns
         df = df.dropna(how='any', subset=['setup_time', 'collect_time', 'run_time'])
-        # if the data frame only has 4 rows or less, then the results are not significant
-        if df.count() < 4:
+        # if the data frame only has no rows, then go on to the next csv file
+        if df.count() <  1:
             continue
         header = df.columns
         for field in [i for i in header if not i.endswith('time')]:
@@ -44,7 +44,8 @@ for file in file_list:
                 # drop rows with null values
                 avg_df = avg_df.na.drop()
                 avg_df.map(flatten).saveToCassandra(DATABASE, table_name)
-                avg_df.select('experiment_id').distinct().map(flatten).saveToCassandra(DATABASE, 'experiments')
+        df.select('experiment_id', 'job_id', 'package_name').distinct().map(flatten).saveToCassandra(DATABASE, 'jobs')
+        df.select('experiment_id').distinct().map(flatten).saveToCassandra(DATABASE, 'experiments')
     except:
         print file.key
 # df.groupBy('sw_swap', 'experiment_id').count('sw_swap').show()
