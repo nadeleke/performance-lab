@@ -25,6 +25,9 @@ for file in file_list:
         df = sqlContext.read.format('com.databricks.spark.csv').options(header='true', inferschema='true').load('s3n://yuguang-data/{}'.format(file.key))
         # drop rows that have null values in these columns
         df = df.dropna(how='any', subset=['setup_time', 'collect_time', 'run_time'])
+        # if the data frame only has 4 rows or less, then the results are not significant
+        if df.count() < 4:
+            continue
         header = df.columns
         for field in [i for i in header if not i.endswith('time')]:
             if field.startswith('hw') or field.startswith('sw') and df.select(field).distinct().count() > 1:
