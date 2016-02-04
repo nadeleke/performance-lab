@@ -21,26 +21,29 @@ for file in file_list:
     matches = re.search('^\d{1,4}_results_index.csv', file.key)
     if not matches:
         continue
-    df = sqlContext.read.format('com.databricks.spark.csv').options(header='true', inferschema='true').load('s3n://yuguang-data/{}'.format(file.key))
-    # drop rows that have null values in these columns
-    df = df.dropna(how='any', subset=['setup_time', 'collect_time', 'run_time'])
-    header = df.columns
-    for field in [i for i in header if not i.endswith('time')]:
-        if field.startswith('hw') or field.startswith('sw') and df.select(field).distinct().count() > 1:
-            table_name = 'avg_' + field
-            avg_df = df.groupBy('experiment_id', field).agg({'setup_time': "avg",'collect_time': "avg",'run_time': "avg"})
-            for time_field in ['setup', 'run', 'collect']:
-                performance_metric_field = time_field + '_time'
-                avg_df = avg_df.withColumnRenamed('avg({})'.format(performance_metric_field), performance_metric_field)
-            # avg_df.show()
-            # to avoid bug when saving rdd directly using saveToCassandra
-            def flatten(x):
-              x_dict = x.asDict()
-              return x_dict
-            # drop rows with null values
-            avg_df = avg_df.na.drop()
-            avg_df.map(flatten).saveToCassandra(DATABASE, table_name)
-
+    try:
+        df = sqlContext.read.format('com.databricks.spark.csv').options(header='true', inferschema='true').load('s3n://yuguang-data/{}'.format(file.key))
+        # drop rows that have null values in these columns
+        df = df.dropna(how='any', subset=['setup_time', 'collect_time', 'run_time'])
+        header = df.columns
+        for field in [i for i in header if not i.endswith('time')]:
+            if field.startswith('hw') or field.startswith('sw') and df.select(field).distinct().count() > 1:
+                table_name = 'avg_' + field
+                avg_df = df.groupBy('experiment_id', field).agg({'setup_time': "avg",'collect_time': "avg",'run_time': "avg"})
+                for time_field in ['setup', 'run', 'collect']:
+                    performance_metric_field = time_field + '_time'
+                    avg_df = avg_df.withColumnRenamed('avg({})'.format(performance_metric_field), performance_metric_field)
+                # avg_df.show()
+                # to avoid bug when saving rdd directly using saveToCassandra
+                def flatten(x):
+                  x_dict = x.asDict()
+                  return x_dict
+                # drop rows with null values
+                avg_df = avg_df.na.drop()
+                avg_df.map(flatten).saveToCassandra(DATABASE, table_name)
+                avg_df.select('experiment_id').distinct().map(flatten).saveToCassandra(DATABASE, 'experiments')
+    except:
+        print file.key
 # df.groupBy('sw_swap', 'experiment_id').count('sw_swap').show()
 # df.groupBy('sw_swap', 'experiment_id').agg({"setup_time":"avg"}).rdd
 # df.select('hw_cpu_mhz').agg(countDistinct('hw_cpu_mhz')).show()

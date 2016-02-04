@@ -36,3 +36,4 @@ CREATE TABLE avg_sw_link_order (experiment_id int, sw_link_order text, setup_tim
 CREATE TABLE avg_sw_opt_flag (experiment_id int, sw_opt_flag text, setup_time double, run_time double, collect_time double, PRIMARY KEY (experiment_id, sw_opt_flag));
 CREATE TABLE avg_sw_swap (experiment_id int, sw_swap text, setup_time double, run_time double, collect_time double, PRIMARY KEY (experiment_id, sw_swap));
 CREATE TABLE avg_sw_sys_time (experiment_id int, sw_sys_time text, setup_time double, run_time double, collect_time double, PRIMARY KEY (experiment_id, sw_sys_time));
+CREATE TABLE experiments (experiment_id int PRIMARY KEY);
