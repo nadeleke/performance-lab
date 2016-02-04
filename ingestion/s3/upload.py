@@ -26,7 +26,7 @@ for tar_file in os.listdir(RESULTS_DIR):
             experiment_id = file_name_parts[1]
             csv_path = '{}_results_index.csv'.format(experiment_id)
             s3_client.upload_file(csv_path, 'yuguang-data', csv_path)
-            sleep(2)
+            sleep(5)
             os.rmdir(tar_file.replace('.tar', ''))
         except:
             # older experiment files have a different structure
