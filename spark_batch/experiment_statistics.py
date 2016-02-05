@@ -22,7 +22,11 @@ for file in file_list:
     if not matches:
         continue
     try:
-        df = sqlContext.read.format('com.databricks.spark.csv').options(header='true', inferschema='true').load('s3n://yuguang-data/{}'.format(file.key))
+        df = sqlContext.read.format('com.databricks.spark.csv').options(header='true', inferschema='true').load('s3n://yuguang-experiments/{}'.format(file.key))
+    except:
+        # in the case of empty files
+        pass
+    else:
         # drop rows that have null values in these columns
         df = df.dropna(how='any', subset=['setup_time', 'collect_time', 'run_time'])
         num_rows = 0
