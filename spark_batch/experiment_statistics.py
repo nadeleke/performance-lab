@@ -53,8 +53,6 @@ for file in file_list:
         if num_rows > 0:
             df.select('experiment_id', 'job_id', 'package_name').distinct().map(flatten).saveToCassandra(DATABASE, 'jobs')
             df.select('experiment_id').distinct().map(flatten).saveToCassandra(DATABASE, 'experiments')
-    except:
-        print file.key
 # df.groupBy('sw_swap', 'experiment_id').count('sw_swap').show()
 # df.groupBy('sw_swap', 'experiment_id').agg({"setup_time":"avg"}).rdd
 # df.select('hw_cpu_mhz').agg(countDistinct('hw_cpu_mhz')).show()
