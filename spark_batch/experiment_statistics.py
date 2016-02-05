@@ -15,7 +15,7 @@ DATABASE = 'datamill'
 
 
 # os.chdir(RESULTS_DIR)
-my_bucket = s3.Bucket('yuguang-data')
+my_bucket = s3.Bucket('yuguang-experiments')
 file_list = my_bucket.objects.all()
 for file in file_list:
     matches = re.search('^\d{1,4}_results_index.csv', file.key)
