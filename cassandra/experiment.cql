@@ -18,6 +18,8 @@ DROP TABLE avg_sw_link_order;
 DROP TABLE avg_sw_opt_flag;
 DROP TABLE avg_sw_swap;
 DROP TABLE avg_sw_sys_time;
+DROP TABLE experiments;
+DROP TABLE jobs;
 CREATE TABLE avg_hw_cpu_arch (experiment_id int, hw_cpu_arch text, setup_time double, run_time double, collect_time double, PRIMARY KEY (experiment_id, hw_cpu_arch));
 CREATE TABLE avg_hw_cpu_mhz (experiment_id int, hw_cpu_mhz int, setup_time double, run_time double, collect_time double, PRIMARY KEY (experiment_id, hw_cpu_mhz));
 CREATE TABLE avg_hw_gpu_mhz (experiment_id int, hw_gpu_mhz int, setup_time double, run_time double, collect_time double, PRIMARY KEY (experiment_id, hw_gpu_mhz));
@@ -37,3 +39,4 @@ CREATE TABLE avg_sw_opt_flag (experiment_id int, sw_opt_flag text, setup_time do
 CREATE TABLE avg_sw_swap (experiment_id int, sw_swap text, setup_time double, run_time double, collect_time double, PRIMARY KEY (experiment_id, sw_swap));
 CREATE TABLE avg_sw_sys_time (experiment_id int, sw_sys_time text, setup_time double, run_time double, collect_time double, PRIMARY KEY (experiment_id, sw_sys_time));
 CREATE TABLE experiments (experiment_id int PRIMARY KEY);
+CREATE TABLE  jobs (experiment_id int, job_id int, package_name text, PRIMARY KEY (experiment_id, job_id));
