@@ -15,11 +15,11 @@ DATABASES = {
         'ENGINE': 'django_cassandra_engine',
         'NAME': 'datamill',
         'TEST_NAME': 'datamill_test',
-        'HOST': 'ec2-52-89-35-171.us-west-2.compute.amazonaws.com',
+        'HOST': 'ec2-52-89-35-171.us-west-2.compute.amazonaws.com,ec2-52-10-210-120.us-west-2.compute.amazonaws.com,ec2-52-24-119-197.us-west-2.compute.amazonaws.com,ec2-52-34-219-20.us-west-2.compute.amazonaws.com',
         'OPTIONS': {
             'replication': {
                 'strategy_class': 'SimpleStrategy',
-                'replication_factor': 3
+                'replication_factor': 2
             }
         }
     }
@@ -115,7 +115,8 @@ TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    '/home/ubuntu/webserver/templates',
+    os.path.join(PROJECT_DIR, "templates"),
+    '/home/yuguang/Insight/datamill-live-jobs/webserver/templates'
 )
 
 INSTALLED_APPS = (

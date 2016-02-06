@@ -1,16 +1,34 @@
 from django.http import HttpResponse
 from models import *
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import simplejson as json
-from django.http import JsonResponse
+from django.core import serializers
 from django.shortcuts import render
 
 def attrs(model):
     for field in model._meta.fields:
         yield field.name, getattr(model, field.name)
 
+def paginate(request, query_set, limit=25):
+    paginator = Paginator(query_set, limit)
+
+    page = request.GET.get('page')
+    try:
+        query_set = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        query_set = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g. 9999), deliver last page of results.
+        query_set = paginator.page(paginator.num_pages)
+    return query_set
+
+def experiment_list(request):
+    experiments = paginate(request, Experiments.objects.all())
+    return render(request, 'experiment_list.html', context={'experiment_list': experiments})
+
 def experiment(request, id):
     avg_dict = {}
-    id = 1525
     first_factor = None
     for model in [avg_hw_cpu_arch, avg_hw_cpu_mhz, avg_hw_gpu_mhz, avg_hw_num_cpus, avg_hw_page_sz, avg_hw_ram_mhz, avg_hw_ram_sz, avg_sw_address_randomization, avg_sw_autogroup, avg_sw_compiler, avg_sw_drop_caches, avg_sw_env_padding, avg_sw_filesystem, avg_sw_freq_scaling, avg_sw_link_order, avg_sw_opt_flag, avg_sw_swap, avg_sw_sys_time]:
         items = model.objects.filter(experiment_id=id)

@@ -2,6 +2,14 @@ import uuid
 from cassandra.cqlengine import columns
 from cassandra.cqlengine.models import Model
 
+class Experiments(Model):
+    experiment_id = columns.Integer(primary_key=True)
+
+class Jobs(Model):
+    experiment_id = columns.Integer(primary_key=True)
+    job_id = columns.Integer(primary_key=True)
+    package_name = columns.Text()
+
 class avg_hw_cpu_arch(Model):
     class Meta:
         db_table = 'avg_hw_cpu_arch'
