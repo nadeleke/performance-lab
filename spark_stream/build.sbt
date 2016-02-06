@@ -14,10 +14,8 @@ libraryDependencies ++= Seq(
   "com.datastax.spark" % "spark-cassandra-connector_2.10" % "1.5.0-M3",
   "org.apache.spark" % "spark-streaming_2.10" % "1.3.0" % "provided",
   "org.apache.spark" % "spark-streaming-kafka_2.10" % "1.3.0",
-  "net.debasishg" %% "redisclient" % "3.0",
+  "net.debasishg" %% "redisclient" % "3.0"
 )
-
-libraryDependencies += "org.apache.commons" % "commons-compress" % "1.2"
 
 mergeStrategy in assembly := {
   case m if m.toLowerCase.endsWith("manifest.mf")          => MergeStrategy.discard
