@@ -5,10 +5,6 @@ import simplejson as json
 from django.core import serializers
 from django.shortcuts import render
 
-def attrs(model):
-    for field in model._meta.fields:
-        yield field.name, getattr(model, field.name)
-
 def paginate(request, query_set, limit=25):
     paginator = Paginator(query_set, limit)
 
@@ -34,6 +30,7 @@ def experiment(request, id):
         items = model.objects.filter(experiment_id=id)
         for i in items:
             field = model.__name__.replace('avg_', '')
+            # set the default factor displayed
             if not first_factor:
                 first_factor = field
             avg_dict.setdefault(field, [])
@@ -44,4 +41,4 @@ def experiment(request, id):
                 'run': i.run_time
             })
 
-    return render(request, 'experiment.html', context={'json': json.dumps(avg_dict), 'factors': avg_dict.keys(), 'first_factor': first_factor})
+    return render(request, 'experiment.html', context={'json': json.dumps(avg_dict), 'factors': avg_dict.keys(), 'first_factor': first_factor, 'experiment_id': id})

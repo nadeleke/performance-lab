@@ -10,6 +10,7 @@
   </SELECT>
   <button id="change">Refresh Table</button>
   <div id="container" style="height: 400px"></div>
+  <a href="https://datamill.uwaterloo.ca/experiment_results/{{ experiment_id }}/">Download experiment data</a>
   <script>
     var labelMap = {'hw_cpu_arch': 'CPU architecture',
  'hw_cpu_mhz': ' CPU clockspeed (MHz)',
@@ -46,7 +47,8 @@
     var options = {
       chart: {
         renderTo: 'container',
-        defaultSeriesType: 'spline'
+        defaultSeriesType: 'spline',
+        type: data[available_factor].length > 1 ? 'line' : 'bar'
       },
       title: {
         text: labelMap[available_factor]
@@ -62,35 +64,41 @@
       series: [{name: available_factor, data: getValues(data[available_factor])}]
     };
     var defaultOptions = options;
-    var chart = new Highcharts.Chart(options);
-
-    $("#list").on('change', function () {
-      var selVal = $("#list").val();
-      if (selVal == available_factor || selVal == '') {
-        options = defaultOptions;
-      }
-      else {
-        options = {
-          chart: {
-            renderTo: 'container',
-            defaultSeriesType: 'spline'
-          },
-          yAxis: {
-              title: {
-                  text: 'Run time (s)'
-              },
-          },
-          title: {
-            text: labelMap[selVal]
-          },
-          xAxis: {
-            categories: getLabels(data[selVal]),
-          },
-          series: [{name: selVal, data: getValues(data[selVal])}]
-        };
+    function init() {
+      if (_.isEmpty(data)) {
+        return;
       }
       var chart = new Highcharts.Chart(options);
-    });
 
+      $("#list").on('change', function () {
+        var selVal = $("#list").val();
+        if (selVal == available_factor || selVal == '') {
+          options = defaultOptions;
+        }
+        else {
+          options = {
+            chart: {
+              renderTo: 'container',
+              defaultSeriesType: 'spline',
+              type: data[available_factor].length > 1 ? 'line' : 'bar'
+            },
+            yAxis: {
+                title: {
+                    text: 'Run time (s)'
+                },
+            },
+            title: {
+              text: labelMap[selVal]
+            },
+            xAxis: {
+              categories: getLabels(data[selVal]),
+            },
+            series: [{name: selVal, data: getValues(data[selVal])}]
+          };
+        }
+        var chart = new Highcharts.Chart(options);
+      });
+    }
+    init();
   </script>
 {% endblock %}
