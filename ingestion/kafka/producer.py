@@ -29,8 +29,8 @@ def chunk_iterable(A,n):
     if len(chunk)>0:
         yield(chunk)
 
-RESULTS_DIR='/var/datamill/results/'
-
+# RESULTS_DIR='/var/datamill/results/'
+RESULTS_DIR='/home/ubuntu/results/'
 if __name__=="__main__":
 
     # arg parsing
@@ -38,6 +38,7 @@ if __name__=="__main__":
     # parser.add_argument("file", help="A file of data, one datum per line")
     parser.add_argument("host", help="Public IP address of a Kafka node")
     parser.add_argument("topic", help="Kafka topic to feed")
+    parser.add_argument("partition_key", default=None, help="Partition key")
     parser.add_argument("-p", "--port", default=9092, help="port for zookeeper, default 9092")
     parser.add_argument("-c", "--chunksize", default=100, help="Number of messages to send at one time,  default 100")
     parser.add_argument("-d", "--delay", default=1000, help="Delay in ms between shipment of chunks to Kafka, default 0")
@@ -56,24 +57,25 @@ if __name__=="__main__":
     for tar_file in os.listdir(RESULTS_DIR):
         if tar_file.endswith('_results.tar') and tar_file.startswith(
 'experiment_'):
-            try:
-                print tar_file
+            if not os.path.exists(tar_file.replace('_results.tar', '')):
                 tar = tarfile.open(tar_file)
                 tar.extractall()
                 tar.close()
-                file_name = os.path.basename(tar_file)
-                file_name_parts = file_name.split('_')
-                folder_name = file_name_parts[0] + '_' + file_name_parts[1]
-                experiment_id = file_name_parts[1]
-                first_line = True
-                with open('{}experiment_{}/{}_results_index.csv'.format(RESULTS_DIR, experiment_id, experiment_id)) as result_csv:
-                    for row in result_csv:
-                        if first_line:
-                            first_line = False
-                            continue
+            file_name = os.path.basename(tar_file)
+            file_name_parts = file_name.split('_')
+            folder_name = file_name_parts[0] + '_' + file_name_parts[1]
+            experiment_id = file_name_parts[1]
+            first_line = True
+            with open('{}experiment_{}/{}_results_index.csv'.format(RESULTS_DIR, experiment_id, experiment_id)) as result_csv:
+                print("Uploading data for experiment {0}".format(experiment_id))
+                for row in result_csv:
+                    if first_line:
+                        first_line = False
+                        continue
+                    if args.partition_key:
+                        print("Sending messages to Kafka topic {0}, key {1}".format(args.topic, args.partition_key))
+                        producer.send_messages(args.topic, args.partition_key, row)
+                    else:
+                        print("Sending messages to Kafka topic {0}".format(args.topic))
                         producer.send_messages(args.topic, row)
-                        sleep(1.0*int(args.delay)/1000.0)
-                os.rmdir(tar_file.replace('.tar', ''))
-            except:
-                # older experiment files have a different structure
-                pass
+                    sleep(1.0*int(args.delay)/1000.0)
