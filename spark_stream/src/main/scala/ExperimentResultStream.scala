@@ -108,6 +108,8 @@ object ExperimentResultStream {
 
         // Calculate the F-statistic and p-value
         val F_statistic = MSB / MSE
+        val fdist = new FDistribution(null, deg_freedom_treat, deg_freedom_res)
+        val pvalue = 1.0 - fdist.cumulativeProbability(F_statistic)
 
         jobRDD.foreach(job => redis.hmset("log", Map("experiment_id" -> job.experiment_id, "row" -> job.toString)))
         redis.hmset("statistic", Map("experiment_id" -> jobRDD.first().experiment_id, "F_statistic" -> F_statistic))

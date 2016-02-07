@@ -17,6 +17,9 @@ libraryDependencies ++= Seq(
   "net.debasishg" %% "redisclient" % "3.0"
 )
 
+libraryDependencies += "org.apache.commons" % "commons-math3" % "3.5"
+
+
 mergeStrategy in assembly := {
   case m if m.toLowerCase.endsWith("manifest.mf")          => MergeStrategy.discard
   case m if m.toLowerCase.matches("meta-inf.*\\.sf$")      => MergeStrategy.discard
