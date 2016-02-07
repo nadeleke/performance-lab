@@ -1,15 +1,18 @@
 import kafka.serializer.StringDecoder
 import org.apache.spark.mllib.evaluation.RegressionMetrics
+import org.apache.commons.math3.distribution.FDistribution
 import org.apache.spark.streaming._
 import org.apache.spark.streaming.kafka._
 import org.apache.spark.SparkConf
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
 import org.apache.spark.sql._
-import com.datastax.spark.connector._
-import org.apache.spark.sql.Row
+import org.apache.spark.streaming.Seconds
+import org.apache.spark.streaming.StreamingContext
 
-import scala.collection.mutable.ArrayBuffer
+import com.redis._
+import serialization._
+import Parse.Implicits._
 
 object ExperimentResultStream {
 
@@ -28,15 +31,23 @@ object ExperimentResultStream {
 
   }
 
+  def totalJobs(newValues: Seq[Int], runningCount: Option[Int]): Option[Int] = {
+
+    val newCount = newValues.sum
+    val oldCount = runningCount.getOrElse(0)
+
+    Some((newCount + oldCount))
+  }
+
   def main(args: Array[String]) {
     val brokers = "ec2-52-34-250-158.us-west-2.compute.amazonaws.com:9092"
-    val topics = "results"
+    val topics = "experiment-data-recent"
     val topicsSet = topics.split(",").toSet
 
     // Create context with 2 second batch interval
     val sparkConf = new SparkConf().setAppName("spark_stream")
     val stream_sc = new StreamingContext(sparkConf, Seconds(10))
-    stream_sc.checkpoint("checkpoint")
+    stream_sc.checkpoint("/tmp/experiment-streaming")
 
     // Create context to connect to cassandra
     val cassandraConf = new SparkConf(true)
@@ -51,6 +62,7 @@ object ExperimentResultStream {
     val kafkaParams = Map[String, String]("metadata.broker.list" -> brokers)
     val messages = KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](stream_sc, kafkaParams, topicsSet)
 
+    val redis = new RedisClient("54.213.91.125", 6379)
     // Get the lines and show results
     messages.foreachRDD { rdd =>
       val sqlContext = SQLContextSingleton.getInstance(rdd.sparkContext)
@@ -61,8 +73,9 @@ object ExperimentResultStream {
       try {
         val jobRDD = lines.map(Job.parseJob)
         val jobDF = jobRDD.toDF()
-        // group together trials with the same factor levels and calculate average run times
-        val run_time_DF = jobDF.groupBy(jobDF("worker_id"))
+        // group together trials by the worker ID and calculate average run times
+        val run_time_DF = jobDF.groupBy(jobDF("experiment_id"), jobDF("worker_id"))
+        // calculate
         val avg_run_time_DF = run_time_DF.agg("run_time" -> "avg")
         val summary_DF = jobDF.describe("run_time").toDF()
         // get the average run time from summary statistics
@@ -96,11 +109,13 @@ object ExperimentResultStream {
         // Calculate the F-statistic and p-value
         val F_statistic = MSB / MSE
 
+        jobRDD.foreach(job => redis.hmset("log", Map("experiment_id" -> job.experiment_id, "row" -> job.toString)))
+        redis.hmset("statistic", Map("experiment_id" -> jobRDD.first().experiment_id, "F_statistic" -> F_statistic))
+
       } catch {
         case ex: IllegalArgumentException => print("skipping current job")
       }
-//      tweets_per_source_DF.write.format("org.apache.spark.sql.cassandra")
-//        .options(Map("table" -> "tweet_prototype", "keyspace" -> "twitter")).mode(SaveMode.Append).save()
+
     }
 
 
