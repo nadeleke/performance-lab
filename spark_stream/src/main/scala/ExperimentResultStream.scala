@@ -1,5 +1,5 @@
 import kafka.serializer.StringDecoder
-
+import org.apache.spark.mllib.evaluation.RegressionMetrics
 import org.apache.spark.streaming._
 import org.apache.spark.streaming.kafka._
 import org.apache.spark.SparkConf
@@ -7,6 +7,9 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
 import org.apache.spark.sql._
 import com.datastax.spark.connector._
+import org.apache.spark.sql.Row
+
+import scala.collection.mutable.ArrayBuffer
 
 object ExperimentResultStream {
 
@@ -23,16 +26,6 @@ object ExperimentResultStream {
       Job(p(0).toInt, p(1).toInt, p(3).toInt, p(5).toInt, p(8).toDouble, p(9).toDouble, p(10).toDouble, p(11), p(12).toInt, p(13).toInt, p(14).toInt, p(15).toInt, p(16).toInt, p(17).toInt, p(18), p(19), p(21), p(24), p(25), p(26), p(27), p(28))
     }
 
-  }
-
-  def mean(l: Array[Double]): Double = {
-    var i = 0
-    var sum = 0
-    while (i < l.length) {
-      sum += l(i)
-      i += 1
-    }
-    sum / l.length
   }
 
   def main(args: Array[String]) {
@@ -69,11 +62,39 @@ object ExperimentResultStream {
         val jobRDD = lines.map(Job.parseJob)
         val jobDF = jobRDD.toDF()
         // group together trials with the same factor levels and calculate average run times
-        val avg_run_time_DF = jobDF.groupBy(jobDF("avg_hw_cpu_arch"), jobDF("avg_hw_cpu_mhz"), jobDF("avg_hw_gpu_mhz"), jobDF("avg_hw_num_cpus"), jobDF("avg_hw_page_sz"), jobDF("avg_hw_ram_mhz"), jobDF("avg_hw_ram_sz"), jobDF("avg_sw_address_randomization"), jobDF("avg_sw_autogroup"), jobDF("avg_sw_compiler"), jobDF("avg_sw_drop_caches"), jobDF("avg_sw_env_padding"), jobDF("avg_sw_filesystem"), jobDF("avg_sw_freq_scaling"), jobDF("avg_sw_link_order"), jobDF("avg_sw_opt_flag"), jobDF("avg_sw_swap"), jobDF("avg_sw_sys_time"))
-          .agg("run_time" -> "avg")
+        val run_time_DF = jobDF.groupBy(jobDF("worker_id"))
+        val avg_run_time_DF = run_time_DF.agg("run_time" -> "avg")
         val summary_DF = jobDF.describe("run_time").toDF()
         // get the average run time from summary statistics
-        val overall_avg_run_time = summary_DF.select("run_time").take(2)
+        val overall_avg_run_time = summary_DF.select("run_time").take(2)(1)(0)
+        // calculate the degrees of freedom for treatment and residuals
+        val deg_freedom_treat = avg_run_time_DF.count() - 1
+        val deg_freedom_total = jobDF.count() - 1
+        val deg_freedom_res = deg_freedom_total - deg_freedom_treat
+
+        // calculate sum of squares
+        val count_run_time_DF = run_time_DF.agg("run_time" -> "count")
+        val diffSquaredDF = avg_run_time_DF.select((avg_run_time_DF("avg(run_time)") - overall_avg_run_time) * (avg_run_time_DF("avg(run_time)") - overall_avg_run_time))
+        var SS_treat:Double = 0
+        // calculate the sum of squares for treatments
+        for (num_repetition <- count_run_time_DF.select("count(run_time)").rdd.map(r => r(0)).collect(); square <- diffSquaredDF.rdd.map(r => r(0)).collect()) {
+          SS_treat += num_repetition.toString().toDouble * square.toString().toDouble
+        }
+        val joinedDF = jobDF.join(avg_run_time_DF, Seq("worker_id"))
+        // calculate the average regression sum of squares
+        val run_time_Tuples = joinedDF.select("run_time","avg(run_time)").rdd.map(r => {
+          (r.getDouble(0), r.getDouble(1))
+        })
+        val regressionMetrics = new RegressionMetrics(run_time_Tuples)
+        // RegressionMetrics.explainedVariance returns the average regression sum of squares
+        val SS_error:Double = regressionMetrics.explainedVariance * run_time_Tuples.count()
+
+        // Mean Sum of Squares between the groups
+        val MSB = SS_treat / deg_freedom_treat
+        val MSE = SS_error / deg_freedom_res
+
+        // Calculate the F-statistic and p-value
+        val F_statistic = MSB / MSE
 
       } catch {
         case ex: IllegalArgumentException => print("skipping current job")
