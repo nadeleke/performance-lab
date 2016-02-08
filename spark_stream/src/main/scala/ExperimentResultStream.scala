@@ -1,4 +1,5 @@
 import kafka.serializer.StringDecoder
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.evaluation.RegressionMetrics
 import org.apache.commons.math3.distribution.FDistribution
 import org.apache.spark.streaming.kafka._
@@ -71,15 +72,18 @@ object ExperimentResultStream {
   }
 
   def main(args: Array[String]) {
+    Logger.getLogger("org").setLevel(Level.WARN)
+    Logger.getLogger("akka").setLevel(Level.WARN)
+
     val brokers = "ec2-52-34-250-158.us-west-2.compute.amazonaws.com:9092"
-    val topics = "experiment-data-recent"
+    val topics = "m5"
     val topicsSet = topics.split(",").toSet
 
     // Create context with 2 second batch interval
     val sparkConf = new SparkConf().setAppName("spark_stream")
     // val ssc = new StreamingContext(sc, Seconds(1))
     val ssc = new StreamingContext(sparkConf, Seconds(10))
-    ssc.checkpoint("checkpoint")
+    ssc.checkpoint("hdfs://ec2-52-89-35-171.us-west-2.compute.amazonaws.com:9000/tmp")
 
     // Create direct kafka stream with brokers and topics
     val kafkaParams = Map[String, String]("metadata.broker.list" -> brokers)
@@ -87,44 +91,32 @@ object ExperimentResultStream {
 
     val redis = new RedisClient("54.213.91.125", 6379)
 
-    try {
-      val jobs = messages.map({ line => val pieces = line._2.split(",")
-        ((pieces(0).toInt, pieces(5).toInt), pieces(9).toDouble)
+    val jobs = messages.map({ line => val pieces = line._2.split(",")
+      ((pieces(0).toInt, pieces(5).toInt), pieces(9).toDouble)
+    })
+    val latestJobs = jobs.updateStateByKey((newJobs: Seq[Double], currentJobs: Option[Seq[Double]]) => {
+        if (!currentJobs.isEmpty) {
+          Option(currentJobs.get ++ newJobs)
+        } else {
+          Option(newJobs)
+        }
       })
-      val latestJobs = jobs.updateStateByKey((newJobs: Seq[Double], currentJobs: Option[Iterable[Double]]) => {
-          if (!currentJobs.isEmpty) {
-            newJobs.foreach(time => {
-              // delete a value by returning None
-              if (time < 0.001 ) {
-                return None
-              }
-            })
-            Option(currentJobs.get ++ newJobs)
-          } else {
-            Option(newJobs)
-          }
-        })
-      latestJobs.foreachRDD { jobRDD =>
-        val sqlContext = SQLContextSingleton.getInstance(jobRDD.sparkContext)
-        import sqlContext.implicits._
+    latestJobs.foreachRDD { jobRDD =>
+      val sqlContext = SQLContextSingleton.getInstance(jobRDD.sparkContext)
+      import sqlContext.implicits._
 
-        val jobDF = jobRDD.toDF()
-        // calculate statistics for each experiment
-        val statsByExp = jobDF.select("experiment_id").distinct().map(row => Map(
-          "id" -> row.getInt(0),
-          "statistics" -> calculateStatistics(row.getInt(0), jobDF.where(jobDF("experiment_id") === row.getInt(0)))))
+      val jobDF = jobRDD.toDF()
+      // calculate statistics for each experiment
+      val statsByExp = jobDF.select("experiment_id").distinct().map(row => Map(
+        "id" -> row.getInt(0),
+        "statistics" -> calculateStatistics(row.getInt(0), jobDF.where(jobDF("experiment_id") === row.getInt(0)))))
 
-        statsByExp.foreach(experiment => redis.hmset("statistic", Map("experiment_id" -> experiment("id"), "F_statistic" -> experiment("statistics"))))
-
-      }
-      // publish all experiment rows to redis
-      messages.map(line => Job.parseJob(line._2)).foreachRDD { jobRDD =>
-        jobRDD.foreach(job => redis.hmset("log", Map("experiment_id" -> job.experiment_id, "row" -> job.toString)))
-      }
+      statsByExp.foreach(experiment => redis.hmset("statistic", Map("experiment_id" -> experiment("id"), "F_statistic" -> experiment("statistics"))))
 
     }
-    catch {
-      case ex: IllegalArgumentException => print("skipping current job")
+    // publish all experiment rows to redis
+    messages.map(line => Job.parseJob(line._2)).foreachRDD { jobRDD =>
+      jobRDD.foreach(job => redis.hmset("log", Map("experiment_id" -> job.experiment_id, "row" -> job.toString)))
     }
 
     // Start the computation
