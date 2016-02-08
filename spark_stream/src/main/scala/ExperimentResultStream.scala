@@ -31,12 +31,45 @@ object ExperimentResultStream {
 
   }
 
-  def totalJobs(newValues: Seq[Int], runningCount: Option[Int]): Option[Int] = {
+  def calculateStatistics(id:Int, jobDF:DataFrame): Double = {
+    // group together trials by the worker ID and calculate average run times
+    val run_time_DF = jobDF.groupBy(jobDF("experiment_id"), jobDF("worker_id"))
 
-    val newCount = newValues.sum
-    val oldCount = runningCount.getOrElse(0)
+    val avg_run_time_DF = run_time_DF.agg("run_time" -> "avg")
+    val summary_DF = jobDF.describe("run_time").toDF()
+    // get the average run time from summary statistics
+    val overall_avg_run_time = summary_DF.select("run_time").take(2)(1)(0)
+    // calculate the degrees of freedom for treatment and residuals
+    val deg_freedom_treat = avg_run_time_DF.count() - 1
+    val deg_freedom_total = jobDF.count() - 1
+    val deg_freedom_res = deg_freedom_total - deg_freedom_treat
 
-    Some((newCount + oldCount))
+    // calculate sum of squares
+    val count_run_time_DF = run_time_DF.agg("run_time" -> "count")
+    val diffSquaredDF = avg_run_time_DF.select((avg_run_time_DF("avg(run_time)") - overall_avg_run_time) * (avg_run_time_DF("avg(run_time)") - overall_avg_run_time))
+    var SS_treat:Double = 0
+    // calculate the sum of squares for treatments
+    for (num_repetition <- count_run_time_DF.select("count(run_time)").rdd.map(r => r(0)).collect(); square <- diffSquaredDF.rdd.map(r => r(0)).collect()) {
+      SS_treat += num_repetition.toString().toDouble * square.toString().toDouble
+    }
+    val joinedDF = jobDF.join(avg_run_time_DF, Seq("experiment_id", "worker_id"))
+    // calculate the average regression sum of squares
+    val run_time_Tuples = joinedDF.select("run_time","avg(run_time)").rdd.map(r => {
+      (r.getDouble(0), r.getDouble(1))
+    })
+    val regressionMetrics = new RegressionMetrics(run_time_Tuples)
+    // RegressionMetrics.explainedVariance returns the average regression sum of squares
+    val SS_error:Double = regressionMetrics.explainedVariance * run_time_Tuples.count()
+
+    // Mean Sum of Squares between the groups
+    val MSB = SS_treat / deg_freedom_treat
+    val MSE = SS_error / deg_freedom_res
+
+    // Calculate the F-statistic and p-value
+    val F_statistic = MSB / MSE
+    val fdist = new FDistribution(null, deg_freedom_treat, deg_freedom_res)
+    val pvalue = 1.0 - fdist.cumulativeProbability(F_statistic)
+    pvalue
   }
 
   def main(args: Array[String]) {
@@ -49,77 +82,51 @@ object ExperimentResultStream {
     val stream_sc = new StreamingContext(sparkConf, Seconds(10))
     stream_sc.checkpoint("/tmp/experiment-streaming")
 
-    // Create context to connect to cassandra
-    val cassandraConf = new SparkConf(true)
-      .set("spark.cassandra.connection.host","ec2-52-34-219-20.us-west-2.compute.amazonaws.com")
-      .setAppName("spark_stream")
-
-    val cassandra_sc = new SparkContext(cassandraConf)
-
-    val sqlContext = new SQLContext(cassandra_sc)
-
     // Create direct kafka stream with brokers and topics
     val kafkaParams = Map[String, String]("metadata.broker.list" -> brokers)
     val messages = KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](stream_sc, kafkaParams, topicsSet)
 
     val redis = new RedisClient("54.213.91.125", 6379)
-    // Get the lines and show results
-    messages.foreachRDD { rdd =>
-      val sqlContext = SQLContextSingleton.getInstance(rdd.sparkContext)
-      import sqlContext.implicits._
 
-      val lines = rdd.map(_._2)
-      // parse the lines into job objects
-      try {
-        val jobRDD = lines.map(Job.parseJob)
-        val jobDF = jobRDD.toDF()
-        // group together trials by the worker ID and calculate average run times
-        val run_time_DF = jobDF.groupBy(jobDF("experiment_id"), jobDF("worker_id"))
-        // calculate
-        val avg_run_time_DF = run_time_DF.agg("run_time" -> "avg")
-        val summary_DF = jobDF.describe("run_time").toDF()
-        // get the average run time from summary statistics
-        val overall_avg_run_time = summary_DF.select("run_time").take(2)(1)(0)
-        // calculate the degrees of freedom for treatment and residuals
-        val deg_freedom_treat = avg_run_time_DF.count() - 1
-        val deg_freedom_total = jobDF.count() - 1
-        val deg_freedom_res = deg_freedom_total - deg_freedom_treat
-
-        // calculate sum of squares
-        val count_run_time_DF = run_time_DF.agg("run_time" -> "count")
-        val diffSquaredDF = avg_run_time_DF.select((avg_run_time_DF("avg(run_time)") - overall_avg_run_time) * (avg_run_time_DF("avg(run_time)") - overall_avg_run_time))
-        var SS_treat:Double = 0
-        // calculate the sum of squares for treatments
-        for (num_repetition <- count_run_time_DF.select("count(run_time)").rdd.map(r => r(0)).collect(); square <- diffSquaredDF.rdd.map(r => r(0)).collect()) {
-          SS_treat += num_repetition.toString().toDouble * square.toString().toDouble
-        }
-        val joinedDF = jobDF.join(avg_run_time_DF, Seq("worker_id"))
-        // calculate the average regression sum of squares
-        val run_time_Tuples = joinedDF.select("run_time","avg(run_time)").rdd.map(r => {
-          (r.getDouble(0), r.getDouble(1))
+    try {
+      val jobs = messages.map(line => Job.parseJob(line._2))
+      val latestJobs = jobs
+        .map(job => ((job.experiment_id, job.worker_id), job.run_time))
+        .updateStateByKey((newJobs: Seq[Double], currentJobs: Option[Iterable[Double]]) => {
+          if (!currentJobs.isEmpty) {
+            newJobs.foreach(time => {
+              // delete a value by returning None
+              if (time < 0.001 ) {
+                return None
+              }
+            })
+            Option(currentJobs.get ++ newJobs)
+          } else {
+            Option(newJobs)
+          }
         })
-        val regressionMetrics = new RegressionMetrics(run_time_Tuples)
-        // RegressionMetrics.explainedVariance returns the average regression sum of squares
-        val SS_error:Double = regressionMetrics.explainedVariance * run_time_Tuples.count()
+      latestJobs.foreachRDD { jobRDD =>
+        val sqlContext = SQLContextSingleton.getInstance(jobRDD.sparkContext)
+        import sqlContext.implicits._
 
-        // Mean Sum of Squares between the groups
-        val MSB = SS_treat / deg_freedom_treat
-        val MSE = SS_error / deg_freedom_res
+        val jobDF = jobRDD.toDF()
+        // calculate statistics for each experiment
+        val statsByExp = jobDF.select("experiment_id").distinct().map(row => Map(
+          "id" -> row.getInt(0),
+          "statistics" -> calculateStatistics(row.getInt(0), jobDF)))
 
-        // Calculate the F-statistic and p-value
-        val F_statistic = MSB / MSE
-        val fdist = new FDistribution(null, deg_freedom_treat, deg_freedom_res)
-        val pvalue = 1.0 - fdist.cumulativeProbability(F_statistic)
+        statsByExp.foreach(experiment => redis.hmset("statistic", Map("experiment_id" -> experiment("id"), "F_statistic" -> experiment("statistics"))))
 
+      }
+      // publish all experiment rows to redis
+      jobs.foreachRDD { jobRDD =>
         jobRDD.foreach(job => redis.hmset("log", Map("experiment_id" -> job.experiment_id, "row" -> job.toString)))
-        redis.hmset("statistic", Map("experiment_id" -> jobRDD.first().experiment_id, "F_statistic" -> F_statistic))
-
-      } catch {
-        case ex: IllegalArgumentException => print("skipping current job")
       }
 
     }
-
+    catch {
+      case ex: IllegalArgumentException => print("skipping current job")
+    }
 
     // Start the computation
     stream_sc.start()
