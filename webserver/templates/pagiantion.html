@@ -1,15 +1,24 @@
-<div class="pagination">
-    <span class="step-links">
-        {% if list.has_previous %}
-            <a href="?page={{ list.previous_page_number }}&order_by={{ order_by }}">previous</a>
-        {% endif %}
+<nav>
+  <ul class="pagination">
+    {% if list.has_previous %}
+      <li>
+        <a href="?page={{ list.previous_page_number }}&order_by={{ order_by }}" aria-label="Previous">
+          <span aria-hidden="true">&laquo;</span>
+        </a>
+      </li>
+    {% endif %}
+    {% for num in list.paginator.page_range %}
+      {% ifequal num list.number %}
+        <li><a href="#">{{ num }}</a></li>
+      {% else %}
+        <li><a href="?page={{ num }}"> {{ num }}</a></li>
+      {% endifequal %}
+    {% endfor %}
+    {% if list.has_next %}
+      <li>
+        <a href="?page={{ list.next_page_number }}&order_by={{ order_by }}"><span aria-hidden="true">&raquo;</span></a>
+      </li>
+    {% endif %}
 
-        <span class="current">
-            Page {{ list.number }} of {{ list.paginator.num_pages }}
-        </span>
-
-        {% if list.has_next %}
-            <a href="?page={{ list.next_page_number }}&order_by={{ order_by }}">next</a>
-        {% endif %}
-    </span>
-</div>
+  </ul>
+</nav>

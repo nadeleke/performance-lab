@@ -3,12 +3,12 @@
 {% block title %}Experiment List{% endblock %}
 
 {% block content %}
-  {% with list=experiment_list %}
-    {% include "pagiantion.html" %}
-  {% endwith %}
   <ul>
     {% for e in experiment_list %}
       <li><a href="/experiment/{{ e.experiment_id }}/">{{ e.experiment_id }}</a></li>
     {% endfor %}
   </ul>
+  {% with list=experiment_list %}
+    {% include "pagiantion.html" %}
+  {% endwith %}
 {% endblock %}
