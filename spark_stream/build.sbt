@@ -17,6 +17,7 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.5"
+libraryDependencies += "org.apache.spark" % "spark-mllib_2.10" % "1.5.2"
 
 
 mergeStrategy in assembly := {
