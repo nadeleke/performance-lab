@@ -1,17 +1,15 @@
 import kafka.serializer.StringDecoder
 import org.apache.spark.mllib.evaluation.RegressionMetrics
 import org.apache.commons.math3.distribution.FDistribution
-import org.apache.spark.streaming._
 import org.apache.spark.streaming.kafka._
 import org.apache.spark.SparkConf
-import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
 import org.apache.spark.sql._
 import org.apache.spark.streaming.Seconds
 import org.apache.spark.streaming.StreamingContext
 
-import com.redis._
-import serialization._
+import com.redis.RedisClient
+import com.redis.serialization._
 import Parse.Implicits._
 
 object ExperimentResultStream {
@@ -79,20 +77,21 @@ object ExperimentResultStream {
 
     // Create context with 2 second batch interval
     val sparkConf = new SparkConf().setAppName("spark_stream")
-    val stream_sc = new StreamingContext(sparkConf, Seconds(10))
-    stream_sc.checkpoint("/tmp/experiment-streaming")
+    // val ssc = new StreamingContext(sc, Seconds(1))
+    val ssc = new StreamingContext(sparkConf, Seconds(10))
+    ssc.checkpoint("checkpoint")
 
     // Create direct kafka stream with brokers and topics
     val kafkaParams = Map[String, String]("metadata.broker.list" -> brokers)
-    val messages = KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](stream_sc, kafkaParams, topicsSet)
+    val messages = KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](ssc, kafkaParams, topicsSet)
 
     val redis = new RedisClient("54.213.91.125", 6379)
 
     try {
-      val jobs = messages.map(line => Job.parseJob(line._2))
-      val latestJobs = jobs
-        .map(job => ((job.experiment_id, job.worker_id), job.run_time))
-        .updateStateByKey((newJobs: Seq[Double], currentJobs: Option[Iterable[Double]]) => {
+      val jobs = messages.map({ line => val pieces = line._2.split(",")
+        ((pieces(0).toInt, pieces(5).toInt), pieces(9).toDouble)
+      })
+      val latestJobs = jobs.updateStateByKey((newJobs: Seq[Double], currentJobs: Option[Iterable[Double]]) => {
           if (!currentJobs.isEmpty) {
             newJobs.foreach(time => {
               // delete a value by returning None
@@ -113,13 +112,13 @@ object ExperimentResultStream {
         // calculate statistics for each experiment
         val statsByExp = jobDF.select("experiment_id").distinct().map(row => Map(
           "id" -> row.getInt(0),
-          "statistics" -> calculateStatistics(row.getInt(0), jobDF)))
+          "statistics" -> calculateStatistics(row.getInt(0), jobDF.where(jobDF("experiment_id") === row.getInt(0)))))
 
         statsByExp.foreach(experiment => redis.hmset("statistic", Map("experiment_id" -> experiment("id"), "F_statistic" -> experiment("statistics"))))
 
       }
       // publish all experiment rows to redis
-      jobs.foreachRDD { jobRDD =>
+      messages.map(line => Job.parseJob(line._2)).foreachRDD { jobRDD =>
         jobRDD.foreach(job => redis.hmset("log", Map("experiment_id" -> job.experiment_id, "row" -> job.toString)))
       }
 
@@ -129,8 +128,8 @@ object ExperimentResultStream {
     }
 
     // Start the computation
-    stream_sc.start()
-    stream_sc.awaitTermination()
+    ssc.start()
+    ssc.awaitTermination()
   }
 }
 
