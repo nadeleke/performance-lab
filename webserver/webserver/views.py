@@ -42,3 +42,6 @@ def experiment(request, id):
             })
 
     return render(request, 'experiment.html', context={'json': json.dumps(avg_dict), 'factors': avg_dict.keys(), 'first_factor': first_factor, 'experiment_id': id})
+
+def home(request):
+    return render(request, 'home.html')
