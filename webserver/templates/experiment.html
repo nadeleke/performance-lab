@@ -3,14 +3,17 @@
 {% block title %}{% endblock %}
 
 {% block content %}
-  <SELECT id="list">
+  <select id="list">
   {% for factor in factors %}
-    <OPTION VALUE="{{ factor }}">{{ factor }}</option>
+    <option value="{{ factor }}">{{ factor }}</option>
   {% endfor %}
-  </SELECT>
+  </select>
   <button id="change">Refresh Table</button>
   <div id="container" style="height: 400px"></div>
   <a href="https://datamill.uwaterloo.ca/experiment_results/{{ experiment_id }}/">Download experiment data</a>
+{% endblock %}
+
+{% block script %}
   <script>
     var labelMap = {'hw_cpu_arch': 'CPU architecture',
  'hw_cpu_mhz': ' CPU clockspeed (MHz)',
