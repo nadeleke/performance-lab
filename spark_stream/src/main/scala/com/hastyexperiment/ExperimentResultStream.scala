@@ -1,34 +1,16 @@
-import kafka.serializer.StringDecoder
-import org.apache.log4j.{Level, Logger}
-import org.apache.spark.mllib.evaluation.RegressionMetrics
-import org.apache.commons.math3.distribution.FDistribution
-import org.apache.spark.streaming.kafka._
-import org.apache.spark.SparkConf
-import org.apache.spark.SparkContext
-import org.apache.spark.sql._
-import org.apache.spark.streaming.Seconds
-import org.apache.spark.streaming.StreamingContext
-
+import com.hastyexperiment.Util._
 import com.redis.RedisClient
-import com.redis.serialization._
-import Parse.Implicits._
+import kafka.serializer.StringDecoder
+import org.apache.commons.math3.distribution.FDistribution
+import org.apache.spark.mllib.evaluation.RegressionMetrics
+import org.apache.spark.sql._
+import org.apache.spark.streaming.kafka._
+import org.apache.spark.streaming.{Seconds, StreamingContext}
+import org.apache.spark.{SparkConf, SparkContext}
 
 object ExperimentResultStream {
 
-  case class Job(experiment_id: Int, job_id: Int, package_id: Int, worker_id: Int, setup_time: Double, run_time: Double, collect_time: Double, hw_cpu_arch: String, hw_cpu_mhz: Int, hw_gpu_mhz: Int, hw_num_cpus: Int, hw_page_sz: Int, hw_ram_mhz: Int, hw_ram_sz: Int, sw_address_randomization: String, sw_autogroup: String, sw_drop_caches: String, sw_freq_scaling: String, sw_link_order: String, sw_opt_flag: String, sw_swap: String, sw_sys_time: String)
-
-  object Job {
-
-    // function to parse line of csv data into Job class
-    def parseJob(str: String): Job = {
-      val p = str.split(",")
-      if (p.length < 29) {
-        throw new IllegalArgumentException("parseJob requires at least 29 columns")
-      }
-      Job(p(0).toInt, p(1).toInt, p(3).toInt, p(5).toInt, p(8).toDouble, p(9).toDouble, p(10).toDouble, p(11), p(12).toInt, p(13).toInt, p(14).toInt, p(15).toInt, p(16).toInt, p(17).toInt, p(18), p(19), p(21), p(24), p(25), p(26), p(27), p(28))
-    }
-
-  }
+  case class Job(experiment_id: Int, hw_cpu_arch: String, run_time: Double)
 
   def calculateStatistics(id:Int, jobDF:DataFrame): Double = {
     // group together trials by the worker ID and calculate average run times
@@ -71,12 +53,38 @@ object ExperimentResultStream {
     pvalue
   }
 
-  def main(args: Array[String]) {
-    Logger.getLogger("org").setLevel(Level.WARN)
-    Logger.getLogger("akka").setLevel(Level.WARN)
+  def resultTableUpdate(in: Seq[MessageTuple], lastState: Option[Time]): Option[Time] = {
 
-    val brokers = "ec2-52-34-250-158.us-west-2.compute.amazonaws.com:9092"
-    val topics = "m5"
+    in.foldLeft(lastState) {
+      (state, newTuple) => {
+        val (newType, newTime) = newTuple
+
+        newType match {
+
+          // if the experiment is done, don't keep state for it
+          case MessageType.EXPERIMENT_DONE => None
+
+          // otherwise, update the state of the experiment and keep track of the run times
+          case _ => {
+            if (state.isDefined) {
+              val oldTime = state.get
+
+              val time = newTime.getOrElse(oldTime)
+
+              Some(time)
+            } else {
+              newTime
+            }
+          }
+        }
+      }
+    }
+  }
+
+  def main(args: Array[String]) {
+
+    val brokers = "ec2-52-36-57-191.us-west-2.compute.amazonaws.com:9092"
+    val topics = "m2"
     val topicsSet = topics.split(",").toSet
 
     // Create context with 2 second batch interval
@@ -87,36 +95,38 @@ object ExperimentResultStream {
 
     // Create direct kafka stream with brokers and topics
     val kafkaParams = Map[String, String]("metadata.broker.list" -> brokers)
-    val messages = KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](ssc, kafkaParams, topicsSet)
+    val kafkaStream = KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](ssc, kafkaParams, topicsSet)
 
-    val redis = new RedisClient("54.213.91.125", 6379)
+    val wordsStream = kafkaStream.map(pair => {
+      val (_, str) = pair
+      str.stripLineEnd.split(",")
+    }).persist()
 
-    val jobs = messages.map({ line => val pieces = line._2.split(",")
-      ((pieces(0).toInt, pieces(5).toInt), pieces(9).toDouble)
+    val redis = new RedisClient("ec2-52-89-35-171.us-west-2.compute.amazonaws.com", 6379)
+
+    val jobStream = wordsStream.map({ pieces =>
+      val experimentId = pieces(0)
+      val hw_cpu_arch = pieces(6)
+      val time = pieces(4).toDouble
+      (experimentId + ";" + hw_cpu_arch, (MessageType.fromMessageString(pieces(7)), Option(time)))
     })
-    val latestJobs = jobs.updateStateByKey((newJobs: Seq[Double], currentJobs: Option[Seq[Double]]) => {
-        if (!currentJobs.isEmpty) {
-          Option(currentJobs.get ++ newJobs)
-        } else {
-          Option(newJobs)
-        }
-      })
+    val latestJobs = jobStream.updateStateByKey(resultTableUpdate)
     latestJobs.foreachRDD { jobRDD =>
       val sqlContext = SQLContextSingleton.getInstance(jobRDD.sparkContext)
       import sqlContext.implicits._
 
-      val jobDF = jobRDD.toDF()
+      val jobDF = jobRDD.map({case(s, time) =>
+        var parts = s.split(";")
+        Job(parts(0).toInt, parts(1), time)
+      }).toDF()
+      jobDF.show()
       // calculate statistics for each experiment
       val statsByExp = jobDF.select("experiment_id").distinct().map(row => Map(
         "id" -> row.getInt(0),
         "statistics" -> calculateStatistics(row.getInt(0), jobDF.where(jobDF("experiment_id") === row.getInt(0)))))
 
-      statsByExp.foreach(experiment => redis.hmset("statistic", Map("experiment_id" -> experiment("id"), "F_statistic" -> experiment("statistics"))))
+//      statsByExp.foreach(experiment => redis.hmset("statistic", Map("experiment_id" -> experiment("id"), "F_statistic" -> experiment("statistics"))))
 
-    }
-    // publish all experiment rows to redis
-    messages.map(line => Job.parseJob(line._2)).foreachRDD { jobRDD =>
-      jobRDD.foreach(job => redis.hmset("log", Map("experiment_id" -> job.experiment_id, "row" -> job.toString)))
     }
 
     // Start the computation
