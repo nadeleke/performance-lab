@@ -2,11 +2,13 @@ import com.hastyexperiment.Util._
 import com.redis.RedisClient
 import kafka.serializer.StringDecoder
 import org.apache.commons.math3.distribution.FDistribution
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.evaluation.RegressionMetrics
 import org.apache.spark.sql._
 import org.apache.spark.streaming.kafka._
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
+import scalaj.http.Http
 
 object ExperimentResultStream {
 
@@ -53,11 +55,11 @@ object ExperimentResultStream {
     pvalue
   }
 
-  def resultTableUpdate(in: Seq[MessageTuple], lastState: Option[Time]): Option[Time] = {
+  def resultTableUpdate(in: Seq[MessageTuple], lastState: Option[TimeTuple]): Option[TimeTuple] = {
 
     in.foldLeft(lastState) {
       (state, newTuple) => {
-        val (newType, newTime) = newTuple
+        val (newType, newSetupTime, newRunTime, newCollectTime) = newTuple
 
         newType match {
 
@@ -67,13 +69,10 @@ object ExperimentResultStream {
           // otherwise, update the state of the experiment and keep track of the run times
           case _ => {
             if (state.isDefined) {
-              val oldTime = state.get
-
-              val time = newTime.getOrElse(oldTime)
-
-              Some(time)
+              val (oldSetupTime, oldRunTime, oldCollectTime) = state.get
+              Some((newSetupTime.orElse(oldSetupTime), newRunTime.orElse(oldRunTime), newCollectTime.orElse(oldCollectTime)))
             } else {
-              newTime
+              Some((newSetupTime, newRunTime, newCollectTime))
             }
           }
         }
@@ -82,9 +81,11 @@ object ExperimentResultStream {
   }
 
   def main(args: Array[String]) {
+    Logger.getLogger("org").setLevel(Level.WARN)
+    Logger.getLogger("akka").setLevel(Level.WARN)
 
     val brokers = "ec2-52-36-57-191.us-west-2.compute.amazonaws.com:9092"
-    val topics = "m2"
+    val topics = "m6"
     val topicsSet = topics.split(",").toSet
 
     // Create context with 2 second batch interval
@@ -102,32 +103,52 @@ object ExperimentResultStream {
       str.stripLineEnd.split(",")
     }).persist()
 
-    val redis = new RedisClient("ec2-52-89-35-171.us-west-2.compute.amazonaws.com", 6379)
-
     val jobStream = wordsStream.map({ pieces =>
-      val experimentId = pieces(0)
+      val experiment_id = pieces(0)
       val hw_cpu_arch = pieces(6)
-      val time = pieces(4).toDouble
-      (experimentId + ";" + hw_cpu_arch, (MessageType.fromMessageString(pieces(7)), Option(time)))
+      val setup_time = pieces(3).toDouble
+      val run_time = pieces(4).toDouble
+      val collect_time = pieces(5).toDouble
+      val msgType = MessageType.fromMessageString(pieces(7))
+
+      msgType match {
+        case MessageType.RESULT => (experiment_id + ";" + hw_cpu_arch, (msgType, Some(setup_time), Some(run_time), Some(collect_time)))
+        case _ => (experiment_id + ";" + hw_cpu_arch, (msgType, None, None, None))
+      }
     })
     val latestJobs = jobStream.updateStateByKey(resultTableUpdate)
-    latestJobs.foreachRDD { jobRDD =>
-      val sqlContext = SQLContextSingleton.getInstance(jobRDD.sparkContext)
-      import sqlContext.implicits._
 
-      val jobDF = jobRDD.map({case(s, time) =>
-        var parts = s.split(";")
-        Job(parts(0).toInt, parts(1), time)
-      }).toDF()
-      jobDF.show()
-      // calculate statistics for each experiment
-      val statsByExp = jobDF.select("experiment_id").distinct().map(row => Map(
-        "id" -> row.getInt(0),
-        "statistics" -> calculateStatistics(row.getInt(0), jobDF.where(jobDF("experiment_id") === row.getInt(0)))))
+    // Filter out experiment with missing times and group by experiment id and architecture
+    val jobLists = latestJobs.filter(pair => {
+      val (id, (setup_time, run_time, collect_time)) = pair
+      setup_time.isDefined && run_time.isDefined && collect_time.isDefined
+    }).map(pair => {
+      val (id, (setup_time, run_time, collect_time)) = pair
+      val words = id.split(";")
+      val experiment_id = words(0).toInt
+      val hw_cpu_arch = words(1)
+      ((experiment_id, hw_cpu_arch), (setup_time.get, run_time.get, collect_time.get))
+    }).groupByKey()
 
+    // Calculate summary statistics for each key
+    val stats = jobLists.map(pair => {
+      val (k, jobList) = pair
+
+      val count = jobList.size
+      val (avg_setup, avg_run, avg_collect) = (jobList.map(_._1).sum / count, jobList.map(_._2).sum / count, jobList.map(_._3).sum / count)
+      (k, (avg_setup, avg_run, avg_collect))
+    })
+
+    stats.foreachRDD(rdd => {
+      rdd.foreachPartition(pairs => {
+        val redisClient = new RedisClient(redisHost, redisPort)
+        pairs.foreach(pair => {
+          val ((id, arch), (avg_setup, avg_run, avg_collect)) = pair
+          redisClient.hset("experiment", id, "" + arch + "," + avg_setup + "," + avg_run + "," + avg_collect)
+        })
+      })
+    })
 //      statsByExp.foreach(experiment => redis.hmset("statistic", Map("experiment_id" -> experiment("id"), "F_statistic" -> experiment("statistics"))))
-
-    }
 
     // Start the computation
     ssc.start()
