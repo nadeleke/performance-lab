@@ -4,8 +4,8 @@ object Util {
 
   type Time = Double
 
-  type MessageTuple = (MessageType.MessageType, Option[Time], Option[Time], Option[Time])
-  type TimeTuple = (Option[Time], Option[Time], Option[Time])
+  type MessageTuple = (MessageType.MessageType, Option[Time], Option[Time], Option[Time], Option[Int])
+  type TimeTuple = (Option[Time], Option[Time], Option[Time], Option[Int])
 
   object MessageType extends Enumeration {
     type MessageType = Value

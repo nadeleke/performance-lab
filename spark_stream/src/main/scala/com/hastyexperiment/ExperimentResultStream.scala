@@ -8,7 +8,6 @@ import org.apache.spark.sql._
 import org.apache.spark.streaming.kafka._
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
-import scalaj.http.Http
 
 object ExperimentResultStream {
 
@@ -59,7 +58,7 @@ object ExperimentResultStream {
 
     in.foldLeft(lastState) {
       (state, newTuple) => {
-        val (newType, newSetupTime, newRunTime, newCollectTime) = newTuple
+        val (newType, newSetupTime, newRunTime, newCollectTime, newCount) = newTuple
 
         newType match {
 
@@ -69,10 +68,14 @@ object ExperimentResultStream {
           // otherwise, update the state of the experiment and keep track of the run times
           case _ => {
             if (state.isDefined) {
-              val (oldSetupTime, oldRunTime, oldCollectTime) = state.get
-              Some((newSetupTime.orElse(oldSetupTime), newRunTime.orElse(oldRunTime), newCollectTime.orElse(oldCollectTime)))
+              val (oldSetupTime, oldRunTime, oldCollectTime, oldCount) = state.get
+              val setupTimeSum = newSetupTime.get + oldSetupTime.getOrElse(0.0)
+              val runTimeSum = newRunTime.get + oldRunTime.getOrElse(0.0)
+              val collectTimeSum = newCollectTime.get + oldCollectTime.getOrElse(0.0)
+              val count = newCount.get + oldCount.getOrElse(0)
+              Some((Option(setupTimeSum), Option(runTimeSum), Option(collectTimeSum), Option(count)))
             } else {
-              Some((newSetupTime, newRunTime, newCollectTime))
+              Some ((newSetupTime, newRunTime, newCollectTime, newCount))
             }
           }
         }
@@ -91,7 +94,7 @@ object ExperimentResultStream {
     // Create context with 2 second batch interval
     val sparkConf = new SparkConf().setAppName("spark_stream")
     // val ssc = new StreamingContext(sc, Seconds(1))
-    val ssc = new StreamingContext(sparkConf, Seconds(10))
+    val ssc = new StreamingContext(sparkConf, Seconds(1))
     ssc.checkpoint("hdfs://ec2-52-89-35-171.us-west-2.compute.amazonaws.com:9000/tmp")
 
     // Create direct kafka stream with brokers and topics
@@ -112,43 +115,13 @@ object ExperimentResultStream {
       val msgType = MessageType.fromMessageString(pieces(7))
 
       msgType match {
-        case MessageType.RESULT => (experiment_id + ";" + hw_cpu_arch, (msgType, Some(setup_time), Some(run_time), Some(collect_time)))
-        case _ => (experiment_id + ";" + hw_cpu_arch, (msgType, None, None, None))
+        case MessageType.RESULT => (experiment_id + ";" + hw_cpu_arch, (msgType, Some(setup_time), Some(run_time), Some(collect_time), Some(1)))
+        case _ => (experiment_id + ";" + hw_cpu_arch, (msgType, None, None, None, None))
       }
     })
+//    jobStream.print()
     val latestJobs = jobStream.updateStateByKey(resultTableUpdate)
-
-    // Filter out experiment with missing times and group by experiment id and architecture
-    val jobLists = latestJobs.filter(pair => {
-      val (id, (setup_time, run_time, collect_time)) = pair
-      setup_time.isDefined && run_time.isDefined && collect_time.isDefined
-    }).map(pair => {
-      val (id, (setup_time, run_time, collect_time)) = pair
-      val words = id.split(";")
-      val experiment_id = words(0).toInt
-      val hw_cpu_arch = words(1)
-      ((experiment_id, hw_cpu_arch), (setup_time.get, run_time.get, collect_time.get))
-    }).groupByKey()
-
-    // Calculate summary statistics for each key
-    val stats = jobLists.map(pair => {
-      val (k, jobList) = pair
-
-      val count = jobList.size
-      val (avg_setup, avg_run, avg_collect) = (jobList.map(_._1).sum / count, jobList.map(_._2).sum / count, jobList.map(_._3).sum / count)
-      (k, (avg_setup, avg_run, avg_collect))
-    })
-
-    stats.foreachRDD(rdd => {
-      rdd.foreachPartition(pairs => {
-        val redisClient = new RedisClient(redisHost, redisPort)
-        pairs.foreach(pair => {
-          val ((id, arch), (avg_setup, avg_run, avg_collect)) = pair
-          redisClient.hset("experiment", id, "" + arch + "," + avg_setup + "," + avg_run + "," + avg_collect)
-        })
-      })
-    })
-//      statsByExp.foreach(experiment => redis.hmset("statistic", Map("experiment_id" -> experiment("id"), "F_statistic" -> experiment("statistics"))))
+    latestJobs.print()
 
     // Start the computation
     ssc.start()
