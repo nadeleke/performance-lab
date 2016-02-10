@@ -3,14 +3,27 @@
 {% block title %}Experiment List{% endblock %}
 
 {% block content %}
-  <ul>
-    {% for e in experiment_list %}
-      <li><a href="/experiment/{{ e.experiment_id }}/">{{ e.experiment_id }}</a>
-        {% for p in e.packages %}
-          <span>{{ p.package_name }}</span>
-        {% endfor %}
-  {% endfor %}
-  </ul>
+  <div class="panel panel-default">
+  <div class="panel-heading">Experiment List</div>
+
+  <!-- Table -->
+    <table class="table">
+      <tr>
+        <th>Experiment ID</th>
+        <th>Benchmark Software Packages</th>
+      </tr>
+      {% for e in experiment_list %}
+        <tr>
+          <td><a href="/experiment/{{ e.experiment_id }}/">{{ e.experiment_id }}</a></td>
+          <td>
+            {% for p in e.packages %}
+              <span>{{ p.package_name }}</span>
+            {% endfor %}
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+</div>
   {% with list=experiment_list %}
     {% include "pagiantion.html" %}
   {% endwith %}
