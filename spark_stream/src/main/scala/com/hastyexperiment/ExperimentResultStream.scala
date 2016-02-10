@@ -121,7 +121,37 @@ object ExperimentResultStream {
     })
 //    jobStream.print()
     val latestJobs = jobStream.updateStateByKey(resultTableUpdate)
-    latestJobs.print()
+    // Filter out experiment with missing times and group by experiment id and architecture
+    val jobLists = latestJobs.filter(pair => {
+      val (key, (setup_time, run_time, collect_time, count)) = pair
+      setup_time.isDefined && run_time.isDefined && collect_time.isDefined
+    }).map(pair => {
+      val (key, (setup_time, run_time, collect_time, count)) = pair
+      (key, (setup_time.get, run_time.get, collect_time.get, count.get))
+    }).groupByKey()
+
+    // Calculate summary statistics for each key
+    val stats = jobLists.map(pair => {
+      val (k, jobList) = pair
+      val words = k.split(";")
+      val experiment_id = words(0).toInt
+      val hw_cpu_arch = words(1)
+//      val count = jobList.count()
+      val count = jobList.map(_._4).sum
+      println(f"jobList key: $k%s, count: $count%d")
+      val (avg_setup, avg_run, avg_collect) = (jobList.map(_._1).sum / count, jobList.map(_._2).sum / count, jobList.map(_._3).sum / count)
+      ((experiment_id, hw_cpu_arch), (avg_setup, avg_run, avg_collect, count))
+    })
+
+    stats.foreachRDD(rdd => {
+      rdd.foreachPartition(pairs => {
+        val redisClient = new RedisClient(redisHost, redisPort)
+        pairs.foreach(pair => {
+          val ((id, arch), (avg_setup, avg_run, avg_collect, num_jobs)) = pair
+          redisClient.set("experiment", f"$id%s,$arch%s,$avg_setup%s,$avg_run%s,$avg_collect%s,$num_jobs%s")
+        })
+      })
+    })
 
     // Start the computation
     ssc.start()
