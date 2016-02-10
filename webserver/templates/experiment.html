@@ -4,8 +4,8 @@
 
 {% block content %}
   <select id="list">
-  {% for factor in factors %}
-    <option value="{{ factor }}">{{ factor }}</option>
+  {% for key, value in factors %}
+    <option value="{{ key }}">{{ factor }}</option>
   {% endfor %}
   </select>
   <div id="container" style="height: 400px"></div>
@@ -14,23 +14,7 @@
 
 {% block script %}
   <script>
-    var labelMap = {'hw_cpu_arch': 'CPU architecture',
- 'hw_cpu_mhz': ' CPU clockspeed (MHz)',
- 'hw_gpu_mhz': ' GPU clockspeed (MHz)',
- 'hw_num_cpus': ' Number of CPU cores',
- 'hw_page_sz': ' Page size',
- 'hw_ram_mhz': ' RAM frequency (MHz)',
- 'hw_ram_sz': ' RAM size',
- 'sw_address_randomization': ' Address randomization',
- 'sw_autogroup': ' Kernel autogroup',
- 'sw_compiler': ' Compiler',
- 'sw_drop_caches': ' Drop caches',
- 'sw_env_padding': ' Environment padding',
- 'sw_filesystem': ' Filesystem',
- 'sw_freq_scaling': ' Frequency Scaling',
- 'sw_link_order': ' Link order',
- 'sw_opt_flag': ' Optimization flag',
- 'sw_swap': ' Swap'};
+    var labelMap = {{ lable_map | safe }};
     function getValues(factor_data) {
       var values = _.map(factor_data, function (item){
         return item.run;

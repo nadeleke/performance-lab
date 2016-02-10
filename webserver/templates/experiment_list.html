@@ -5,8 +5,11 @@
 {% block content %}
   <ul>
     {% for e in experiment_list %}
-      <li><a href="/experiment/{{ e.experiment_id }}/">{{ e.experiment_id }}</a></li>
-    {% endfor %}
+      <li><a href="/experiment/{{ e.experiment_id }}/">{{ e.experiment_id }}</a>
+        {% for p in e.packages %}
+          <span>{{ p.package_name }}</span>
+        {% endfor %}
+  {% endfor %}
   </ul>
   {% with list=experiment_list %}
     {% include "pagiantion.html" %}
