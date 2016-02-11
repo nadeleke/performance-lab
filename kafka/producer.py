@@ -49,7 +49,7 @@ if __name__=="__main__":
     # get a client
     print("Connecting to Kafka node {0}:{1}".format(args.host, args.port))
     kafka = KafkaClient("{0}:{1}".format(args.host, args.port))
-    producer = SimpleProducer(kafka, async=True, batch_send_every_n=BATCH_SIZE, async_queue_maxsize=BATCH_SIZE)
+    producer = SimpleProducer(kafka, async=True, batch_send_every_n=BATCH_SIZE, async_queue_maxsize=BATCH_SIZE*10)
 
     def send_row(row):
         if args.partition_key:
@@ -81,11 +81,12 @@ if __name__=="__main__":
             experiment_file = '{}experiment_{}/{}_results_index.csv'.format(RESULTS_DIR, experiment_id, experiment_id)
             if not os.path.exists(experiment_file):
                 continue
-            with open(experiment_file) as result_csv:
-                print("Uploading data for experiment {0}".format(experiment_id))
-                counter = 0
-                # replay lines from a file to simulate a large number of workers
-                while counter < LINES_PER_FILE:
+            counter = 0
+            sentResults = False
+            # replay lines from a file to simulate a large number of workers
+            while counter < LINES_PER_FILE:
+                with open(experiment_file) as result_csv:
+                    print("Uploading data for experiment {0}".format(experiment_id))
                     # while replaying the file, start from beginning and reset header to None
                     header = None
                     for row in result_csv:
@@ -102,9 +103,10 @@ if __name__=="__main__":
                         # send row as an experiment result
                         row = '{},RES'.format(row)
                         send_row(row)
+                        sentResults = True
                         counter += 1
-                    # send experiment done message
-                    if header and header.count(',') >= 28:
-                        row = '{},DONE'.format(header)
-                        send_row(row)
                     sleep(1.0*int(args.delay)/1000.0)
+            # send experiment done message
+            if sentResults:
+                row = '{},DONE'.format(','.join(['0']*29))
+                send_row(row)
