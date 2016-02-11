@@ -51,6 +51,14 @@ if __name__=="__main__":
     kafka = KafkaClient("{0}:{1}".format(args.host, args.port))
     producer = SimpleProducer(kafka, async=True, batch_send_every_n=BATCH_SIZE, async_queue_maxsize=BATCH_SIZE)
 
+    def send_row(row):
+        if args.partition_key:
+            print("Sending messages to Kafka topic {0}, key {1}".format(args.topic, args.partition_key))
+            producer.send_messages(args.topic, args.partition_key, row)
+        else:
+            print("Sending messages to Kafka topic {0}".format(args.topic))
+            producer.send_messages(args.topic, row)
+
     os.chdir(RESULTS_DIR)
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Interfaces with a real world system where files are stored in a folder
@@ -75,9 +83,12 @@ if __name__=="__main__":
                 counter = 0
                 # replay lines from a file to simulate a large number of workers
                 while counter < LINES_PER_FILE:
+                    # while replaying the file, start from beginning and reset header to None
                     header = None
                     for row in result_csv:
-                        if header:
+                        # the first line of CSV sheets starts with a header with names of the columns
+                        if not header and row.startswith('experiment_id'):
+                            # set header to current row
                             header = row
                             # check if this CSV file has all the columns
                             # if not, then don't send any lines from this file
@@ -87,13 +98,9 @@ if __name__=="__main__":
                             continue
                         # send row as an experiment result
                         row = '{},RES'.format(row)
-                        if args.partition_key:
-                            print("Sending messages to Kafka topic {0}, key {1}".format(args.topic, args.partition_key))
-                            producer.send_messages(args.topic, args.partition_key, row)
-                        else:
-                            print("Sending messages to Kafka topic {0}".format(args.topic))
-                            producer.send_messages(args.topic, row)
+                        send_row(row)
                         counter += 1
                     # send experiment done message
                     row = '{},DONE'.format(header)
+                    send_row(row)
                     sleep(1.0*int(args.delay)/1000.0)
