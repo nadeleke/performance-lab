@@ -4,8 +4,10 @@
 
 {% block content %}
   <select id="list">
-  {% for key, value in factors %}
+  {% for key, factor in factors.items %}
+    {% if factor in label_map %}
     <option value="{{ key }}">{{ factor }}</option>
+    {% endif %}
   {% endfor %}
   </select>
   <div id="container" style="height: 400px"></div>
@@ -14,7 +16,7 @@
 
 {% block script %}
   <script>
-    var labelMap = {{ lable_map | safe }};
+    var labelMap = {{ label_map | safe }};
     function getValues(factor_data) {
       var values = _.map(factor_data, function (item){
         return item.run;
@@ -47,6 +49,9 @@
               text: 'Run time (s)'
           },
       },
+      legend: {
+        enabled: false
+      },
       series: [{name: available_factor, data: getValues(data[available_factor])}]
     };
     var defaultOptions = options;
@@ -66,7 +71,7 @@
             chart: {
               renderTo: 'container',
               defaultSeriesType: 'spline',
-              type: data[available_factor].length > 1 ? 'line' : 'bar'
+              type: data[selVal].length > 1 ? 'line' : 'bar'
             },
             yAxis: {
                 title: {
@@ -78,6 +83,9 @@
             },
             xAxis: {
               categories: getLabels(data[selVal]),
+            },
+            legend: {
+              enabled: false
             },
             series: [{name: selVal, data: getValues(data[selVal])}]
           };

@@ -45,6 +45,7 @@ def experiment(request, id):
 'sw_link_order': ' Link order',
 'sw_opt_flag': ' Optimization flag',
 'sw_swap': ' Swap'}
+    available_labels = {}
     for model in [avg_hw_cpu_arch, avg_hw_cpu_mhz, avg_hw_gpu_mhz, avg_hw_num_cpus, avg_hw_page_sz, avg_hw_ram_mhz, avg_hw_ram_sz, avg_sw_address_randomization, avg_sw_autogroup, avg_sw_compiler, avg_sw_drop_caches, avg_sw_env_padding, avg_sw_filesystem, avg_sw_freq_scaling, avg_sw_link_order, avg_sw_opt_flag, avg_sw_swap, avg_sw_sys_time]:
         items = model.objects.filter(experiment_id=id)
         for i in items:
@@ -53,15 +54,15 @@ def experiment(request, id):
             if not first_factor:
                 first_factor = field
             avg_dict.setdefault(field, [])
+            available_labels[field] = labels[field]
             avg_dict[field].append({
-                'name': labels[field],
                 'level': getattr(i, field),
                 'setup': i.setup_time,
                 'collect': i.collect_time,
                 'run': i.run_time
             })
 
-    return render(request, 'experiment.html', context={'json': json.dumps(avg_dict), 'factors': avg_dict, 'first_factor': first_factor, 'experiment_id': id, 'label_map': json.dumps(labels)})
+    return render(request, 'experiment.html', context={'json': json.dumps(avg_dict), 'factors': available_labels, 'first_factor': first_factor, 'experiment_id': id, 'label_map': json.dumps(labels)})
 
 def home(request):
     return render(request, 'home.html')
