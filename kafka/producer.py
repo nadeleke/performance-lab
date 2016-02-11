@@ -85,7 +85,7 @@ if __name__=="__main__":
             sentResults = False
             # replay lines from a file to simulate a large number of workers
             while counter < LINES_PER_FILE:
-                with open(experiment_file) as result_csv:
+                with open(experiment_file, 'r') as result_csv:
                     print("Uploading data for experiment {0}".format(experiment_id))
                     # while replaying the file, start from beginning and reset header to None
                     header = None
@@ -105,7 +105,7 @@ if __name__=="__main__":
                         send_row(row)
                         sentResults = True
                         counter += 1
-                    sleep(1.0*int(args.delay)/1000.0)
+                sleep(1.0*int(args.delay)/1000.0)
             # send experiment done message
             if sentResults:
                 row = '{},DONE'.format(','.join(['0']*29))
