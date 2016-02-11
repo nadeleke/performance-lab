@@ -22,7 +22,7 @@ def paginate(request, query_set, limit=25):
 def experiment_list(request):
     experiments = paginate(request, Experiments.objects.all())
     for e in experiments:
-        e.packages = Jobs.objects.filter(experiment_id=e.experiment_id)
+        e.packages = Jobs.objects.filter(experiment_id=e.experiment_id)[:20]
     return render(request, 'experiment_list.html', context={'experiment_list': experiments})
 
 def experiment(request, id):

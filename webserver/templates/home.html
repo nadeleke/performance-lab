@@ -3,4 +3,29 @@
 {% block title %}Hasty Experiment{% endblock %}
 
 {% block content %}
+  <select multiple="multiple" width="50" data-bind="options: items"></select>
+{% endblock %}
+
+{% block script %}
+  <script src="http://ajax.aspnetcdn.com/ajax/knockout/knockout-3.4.0.js"></script>
+  <script>
+  var ExperimentListModel = function() {
+    this.items = ko.observableArray([]);
+  };
+  var model = new ExperimentListModel();
+  ko.applyBindings(model);
+  var cache = '';
+  function refresh() {
+    $.getJSON("http://ec2-52-89-35-171.us-west-2.compute.amazonaws.com:7379/GET/experiment", function( data ) {
+      var input = data['GET'];
+      if (input != cache) {
+        model.items.push(input);
+        cache = input;
+      }
+    });
+  }
+  $(function () {
+    setInterval(refresh, 2000);
+  });
+  </script>
 {% endblock %}

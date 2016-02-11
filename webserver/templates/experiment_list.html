@@ -17,7 +17,7 @@
           <td><a href="/experiment/{{ e.experiment_id }}/">{{ e.experiment_id }}</a></td>
           <td>
             {% for p in e.packages %}
-              <span>{{ p.package_name }}</span>
+              <span>{{ p.package_name }}{% if forloop.counter == 20 %}...{% endif %}</span>
             {% endfor %}
           </td>
         </tr>
