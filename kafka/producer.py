@@ -29,8 +29,10 @@ def chunk_iterable(A,n):
     if len(chunk)>0:
         yield(chunk)
 
-# RESULTS_DIR='/var/datamill/results/'
-RESULTS_DIR='/home/ubuntu/results/'
+RESULTS_DIR='/var/datamill/results/'
+# RESULTS_DIR='/home/ubuntu/results/'
+BATCH_SIZE = 10000
+LINES_PER_FILE = BATCH_SIZE * 100
 if __name__=="__main__":
 
     # arg parsing
@@ -47,7 +49,7 @@ if __name__=="__main__":
     # get a client
     print("Connecting to Kafka node {0}:{1}".format(args.host, args.port))
     kafka = KafkaClient("{0}:{1}".format(args.host, args.port))
-    producer = SimpleProducer(kafka)
+    producer = SimpleProducer(kafka, async=True, batch_send_every_n=BATCH_SIZE, async_queue_maxsize=BATCH_SIZE)
 
     os.chdir(RESULTS_DIR)
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -65,17 +67,33 @@ if __name__=="__main__":
             file_name_parts = file_name.split('_')
             folder_name = file_name_parts[0] + '_' + file_name_parts[1]
             experiment_id = file_name_parts[1]
-            first_line = True
-            with open('{}experiment_{}/{}_results_index.csv'.format(RESULTS_DIR, experiment_id, experiment_id)) as result_csv:
+            experiment_file = '{}experiment_{}/{}_results_index.csv'.format(RESULTS_DIR, experiment_id, experiment_id)
+            if not os.path.exists(experiment_file):
+                continue
+            with open(experiment_file) as result_csv:
                 print("Uploading data for experiment {0}".format(experiment_id))
-                for row in result_csv:
-                    if first_line:
-                        first_line = False
-                        continue
-                    if args.partition_key:
-                        print("Sending messages to Kafka topic {0}, key {1}".format(args.topic, args.partition_key))
-                        producer.send_messages(args.topic, args.partition_key, row)
-                    else:
-                        print("Sending messages to Kafka topic {0}".format(args.topic))
-                        producer.send_messages(args.topic, row)
+                counter = 0
+                # replay lines from a file to simulate a large number of workers
+                while counter < LINES_PER_FILE:
+                    header = None
+                    for row in result_csv:
+                        if header:
+                            header = row
+                            # check if this CSV file has all the columns
+                            # if not, then don't send any lines from this file
+                            if row.count(',') < 28:
+                                counter = LINES_PER_FILE + 1
+                                break
+                            continue
+                        # send row as an experiment result
+                        row = '{},RES'.format(row)
+                        if args.partition_key:
+                            print("Sending messages to Kafka topic {0}, key {1}".format(args.topic, args.partition_key))
+                            producer.send_messages(args.topic, args.partition_key, row)
+                        else:
+                            print("Sending messages to Kafka topic {0}".format(args.topic))
+                            producer.send_messages(args.topic, row)
+                        counter += 1
+                    # send experiment done message
+                    row = '{},DONE'.format(header)
                     sleep(1.0*int(args.delay)/1000.0)

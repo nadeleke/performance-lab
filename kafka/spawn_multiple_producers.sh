@@ -7,5 +7,5 @@ for ID in `seq 1 $NUM_SPAWNS`;
 do
     echo $ID
     tmux new-window -t $ID
-    tmux send-keys -t $SESSION:$ID 'python producer.py '"$IP_ADDR"' experiment-data-recent '"$ID"'' C-m
+    tmux send-keys -t $SESSION:$ID 'python producer.py '"$IP_ADDR"' m7 '"$ID"'' C-m
 done
