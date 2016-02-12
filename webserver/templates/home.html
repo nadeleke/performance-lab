@@ -43,19 +43,6 @@
 {% block script %}
   <script src="http://ajax.aspnetcdn.com/ajax/knockout/knockout-3.4.0.js"></script>
   <script>
-  Math.easeOutBounce = function (pos) {
-    if ((pos) < (1 / 2.75)) {
-        return (7.5625 * pos * pos);
-    }
-    if (pos < (2 / 2.75)) {
-        return (7.5625 * (pos -= (1.5 / 2.75)) * pos + 0.75);
-    }
-    if (pos < (2.5 / 2.75)) {
-        return (7.5625 * (pos -= (2.25 / 2.75)) * pos + 0.9375);
-    }
-    return (7.5625 * (pos -= (2.625 / 2.75)) * pos + 0.984375);
-};
-  // change animation
   var ExperimentListModel = function() {
     this.jobs = ko.observableArray([]);
     this.addJob = function (text) {
@@ -95,6 +82,9 @@
                       style: {
                           color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
                       }
+                  },
+                  animation: {
+                      duration: 100
                   }
               }
           },
