@@ -8,10 +8,24 @@ import org.apache.spark.sql._
 import org.apache.spark.streaming.kafka._
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
+import java.lang.ArrayIndexOutOfBoundsException
 
 object ExperimentResultStream {
 
-  case class Job(experiment_id: Int, hw_cpu_arch: String, run_time: Double)
+  case class Job(experiment_id: Int, job_id: Int, package_id: Int, worker_id: Int, setup_time: Double, run_time: Double, collect_time: Double, hw_cpu_arch: String, hw_cpu_mhz: Int, hw_gpu_mhz: Int, hw_num_cpus: Int, hw_page_sz: Int, hw_ram_mhz: Int, hw_ram_sz: Int, sw_address_randomization: String, sw_autogroup: String, sw_drop_caches: String, sw_freq_scaling: String, sw_link_order: String, sw_opt_flag: String, sw_swap: String, sw_sys_time: String)
+
+  object Job {
+
+    // function to parse line of csv data into Job class
+    def parseJob(str: String): Job = {
+      val p = str.split(",")
+      if (p.length < 29) {
+        throw new IllegalArgumentException("parseJob requires at least 29 columns")
+      }
+      Job(p(0).toInt, p(1).toInt, p(3).toInt, p(5).toInt, p(8).toDouble, p(9).toDouble, p(10).toDouble, p(11), p(12).toInt, p(13).toInt, p(14).toInt, p(15).toInt, p(16).toInt, p(17).toInt, p(18), p(19), p(21), p(24), p(25), p(26), p(27), p(28))
+    }
+
+  }
 
   def calculateStatistics(id:Int, jobDF:DataFrame): Double = {
     // group together trials by the worker ID and calculate average run times
@@ -88,7 +102,7 @@ object ExperimentResultStream {
     Logger.getLogger("akka").setLevel(Level.WARN)
 
     val brokers = "ec2-52-36-57-191.us-west-2.compute.amazonaws.com:9092"
-    val topics = "m6"
+    val topics = "m22"
     val topicsSet = topics.split(",").toSet
 
     // Create context with 2 second batch interval
@@ -107,16 +121,20 @@ object ExperimentResultStream {
     }).persist()
 
     val jobStream = wordsStream.map({ pieces =>
-      val experiment_id = pieces(0)
-      val hw_cpu_arch = pieces(6)
-      val setup_time = pieces(3).toDouble
-      val run_time = pieces(4).toDouble
-      val collect_time = pieces(5).toDouble
-      val msgType = MessageType.fromMessageString(pieces(7))
+      try {
+        val experiment_id = pieces(0)
+        val hw_cpu_arch = pieces(11)
+        val setup_time = pieces(8).toDouble
+        val run_time = pieces(9).toDouble
+        val collect_time = pieces(10).toDouble
+        val msgType = MessageType.fromMessageString(pieces(29))
 
-      msgType match {
-        case MessageType.RESULT => (experiment_id + ";" + hw_cpu_arch, (msgType, Some(setup_time), Some(run_time), Some(collect_time), Some(1)))
-        case _ => (experiment_id + ";" + hw_cpu_arch, (msgType, None, None, None, None))
+        msgType match {
+          case MessageType.RESULT => (experiment_id + ";" + hw_cpu_arch, (msgType, Some(setup_time), Some(run_time), Some(collect_time), Some(1)))
+          case _ => (experiment_id + ";" + hw_cpu_arch, (msgType, None, None, None, None))
+        }
+      } catch {
+        case e: ArrayIndexOutOfBoundsException => (";", (MessageType.EXPERIMENT_DONE, None, None, None, None));
       }
     })
 //    jobStream.print()
