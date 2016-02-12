@@ -82,7 +82,7 @@ if __name__=="__main__":
             if not os.path.exists(experiment_file):
                 continue
             counter = 0
-            sentResults = False
+            lastLine = None
             # replay lines from a file to simulate a large number of workers
             while counter < LINES_PER_FILE:
                 with open(experiment_file, 'r') as result_csv:
@@ -101,12 +101,12 @@ if __name__=="__main__":
                                 break
                             continue
                         # send row as an experiment result
-                        row = '{},RES'.format(row)
+                        row = '{},RES'.format(row.strip())
                         send_row(row)
-                        sentResults = True
+                        lastLine = row
                         counter += 1
                 sleep(1.0*int(args.delay)/1000.0)
             # send experiment done message
-            if sentResults:
-                row = '{},DONE'.format(','.join(['0']*29))
+            if lastLine:
+                row = '{},DONE'.format(lastLine.strip())
                 send_row(row)
