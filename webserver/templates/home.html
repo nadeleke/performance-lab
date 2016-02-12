@@ -72,15 +72,7 @@
       this.updateChart(job);
     }.bind(this);
     this.updateChart = function (job) {
-      var animation = false;
-      if (!$('#chart').find('#pie-'+job.experiment_id).length) {
-        $('#chart').prepend("<div id='pie-" + job.experiment_id + "'></div>");
-        animation = {
-          duration: 2000,
-          easing: 'easeOutBounce'
-        };
-      }
-      $('#chart').find('#pie-'+job.experiment_id).highcharts({
+      $('#chart').highcharts({
           chart: {
               plotBackgroundColor: null,
               plotBorderWidth: null,
@@ -104,7 +96,10 @@
                           color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
                       }
                   },
-                  animation: animation
+                  animation: {
+                    duration: 2000,
+                    easing: 'easeOutBounce'
+                  }
               }
           },
           series: [{
