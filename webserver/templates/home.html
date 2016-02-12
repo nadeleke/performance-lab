@@ -113,13 +113,13 @@
               }]
           }]
       });
-    }, 750);
+    }, 1250);
   };
   var model = new ExperimentListModel();
   ko.applyBindings(model);
   var cache = '';
   function refresh() {
-    $.getJSON("http://ec2-52-89-35-171.us-west-2.compute.amazonaws.com:7379/GET/experiment", function( data ) {
+    $.getJSON("http://ec2-52-34-219-20.us-west-2.compute.amazonaws.com:7379/GET/experiment", function( data ) {
       var input = data['GET'];
       if (input != cache) {
         model.addJob(input);

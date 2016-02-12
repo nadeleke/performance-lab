@@ -16,8 +16,6 @@ object Util {
       case "DONE" => EXPERIMENT_DONE
     }
   }
-  val redisHost = "ec2-52-89-35-171.us-west-2.compute.amazonaws.com"
+  val redisHost = "ec2-52-34-219-20.us-west-2.compute.amazonaws.com"
   val redisPort = 6379
-  val webdisPort = 7379
-
 }

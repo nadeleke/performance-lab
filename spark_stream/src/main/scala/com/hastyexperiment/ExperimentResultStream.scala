@@ -6,7 +6,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.evaluation.RegressionMetrics
 import org.apache.spark.sql._
 import org.apache.spark.streaming.kafka._
-import org.apache.spark.streaming.{Seconds, StreamingContext}
+import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
 import java.lang.ArrayIndexOutOfBoundsException
 
@@ -102,13 +102,13 @@ object ExperimentResultStream {
     Logger.getLogger("akka").setLevel(Level.WARN)
 
     val brokers = "ec2-52-36-57-191.us-west-2.compute.amazonaws.com:9092"
-    val topics = "m24"
+    val topics = "m27"
     val topicsSet = topics.split(",").toSet
 
     // Create context with 2 second batch interval
     val sparkConf = new SparkConf().setAppName("spark_stream")
     // val ssc = new StreamingContext(sc, Seconds(1))
-    val ssc = new StreamingContext(sparkConf, Seconds(1))
+    val ssc = new StreamingContext(sparkConf, Milliseconds(500))
     ssc.checkpoint("hdfs://ec2-52-89-35-171.us-west-2.compute.amazonaws.com:9000/tmp")
 
     // Create direct kafka stream with brokers and topics
@@ -163,7 +163,7 @@ object ExperimentResultStream {
 
     stats.foreachRDD(rdd => {
       rdd.foreachPartition(pairs => {
-        val redisClient = new RedisClient(redisHost, redisPort)
+        val redisClient = new RedisClient(redisHost, redisPort, secret=Option("1f56a48f2031433b385483b7566c85f1255af5d3dca24fa378a66645534cf8a7"))
         pairs.foreach(pair => {
           val ((id, arch), (avg_setup, avg_run, avg_collect, num_jobs)) = pair
           redisClient.set("experiment", f"$id%s,$arch%s,$avg_setup%s,$avg_run%s,$avg_collect%s,$num_jobs%s")
