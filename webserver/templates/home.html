@@ -4,6 +4,14 @@
 
 {% block content %}
   <div class="panel panel-default">
+    <div class="panel-heading">Current Experiment Bottleneck Analysis</div>
+    <div class="panel-body">
+      Experiments are divided into <a href="https://datamill.uwaterloo.ca/wiki/Getting-Started-with-DataMill/">3 stages: setup, run, and collect</a>. To speed up your experiment, optimize the portion that is taking the longest.
+      <div id="chart"></div>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
     <div class="panel-heading">
       <h3 class="panel-title">Summary of Current Experiments</h3>
     </div>
@@ -35,20 +43,86 @@
 {% block script %}
   <script src="http://ajax.aspnetcdn.com/ajax/knockout/knockout-3.4.0.js"></script>
   <script>
+  Math.easeOutBounce = function (pos) {
+    if ((pos) < (1 / 2.75)) {
+        return (7.5625 * pos * pos);
+    }
+    if (pos < (2 / 2.75)) {
+        return (7.5625 * (pos -= (1.5 / 2.75)) * pos + 0.75);
+    }
+    if (pos < (2.5 / 2.75)) {
+        return (7.5625 * (pos -= (2.25 / 2.75)) * pos + 0.9375);
+    }
+    return (7.5625 * (pos -= (2.625 / 2.75)) * pos + 0.984375);
+};
+  // change animation
   var ExperimentListModel = function() {
     this.jobs = ko.observableArray([]);
     this.addJob = function (text) {
       var words = text.split(',');
-      console.log(words);
-      this.jobs.push({
+      var job = {
         experiment_id: words[0],
         hw_cpu_arch: words[1],
         avg_setup: words[2],
         avg_run: words[3],
         avg_collect: words[4],
         count: words[5]
-      })
+      };
+      this.jobs.push(job);
+      this.updateChart(job);
     }.bind(this);
+    this.updateChart = function (job) {
+      var animation = false;
+      if (!$('#chart').find('#pie-'+job.experiment_id).length) {
+        $('#chart').prepend("<div id='pie-" + job.experiment_id + "'></div>");
+        animation = {
+          duration: 2000,
+          easing: 'easeOutBounce'
+        };
+      }
+      $('#chart').find('#pie-'+job.experiment_id).highcharts({
+          chart: {
+              plotBackgroundColor: null,
+              plotBorderWidth: null,
+              plotShadow: false,
+              type: 'pie'
+          },
+          title: {
+              text: 'Experiment ' + job.experiment_id + ' averages for ' + job.hw_cpu_arch + ' architecture'
+          },
+          tooltip: {
+              pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+          },
+          plotOptions: {
+              pie: {
+                  allowPointSelect: true,
+                  cursor: 'pointer',
+                  dataLabels: {
+                      enabled: true,
+                      format: '<b>{point.name}</b>: {point.percentage:.1f} %',
+                      style: {
+                          color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                      }
+                  },
+                  animation: animation
+              }
+          },
+          series: [{
+              name: 'Experiment stages',
+              colorByPoint: true,
+              data: [{
+                  name: 'Setup Time',
+                  y: parseFloat(job.avg_setup)
+              }, {
+                  name: 'Run Time',
+                  y: parseFloat(job.avg_run)
+              }, {
+                  name: 'Collect Time',
+                  y: parseFloat(job.avg_collect)
+              }]
+          }]
+      });
+    }
   };
   var model = new ExperimentListModel();
   ko.applyBindings(model);
