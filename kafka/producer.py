@@ -32,7 +32,7 @@ def chunk_iterable(A,n):
 RESULTS_DIR='/var/datamill/results/'
 # RESULTS_DIR='/home/ubuntu/results/'
 BATCH_SIZE = 10000
-LINES_PER_FILE = BATCH_SIZE * 100
+LINES_PER_FILE = BATCH_SIZE * 2
 if __name__=="__main__":
 
     # arg parsing
