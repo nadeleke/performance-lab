@@ -6,6 +6,7 @@
 import argparse
 import os
 import tarfile, re
+import random
 from time import sleep
 
 from kafka import SimpleProducer, KafkaClient
@@ -32,7 +33,7 @@ def chunk_iterable(A,n):
 RESULTS_DIR='/var/datamill/results/'
 # RESULTS_DIR='/home/ubuntu/results/'
 BATCH_SIZE = 10000
-LINES_PER_FILE = BATCH_SIZE * 2
+LINES_PER_FILE = BATCH_SIZE * 10
 if __name__=="__main__":
 
     # arg parsing
@@ -65,48 +66,48 @@ if __name__=="__main__":
         # Interfaces with a real world system where files are stored in a folder
         # Each tar file contains a folder which contains a csv file
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        for tar_file in os.listdir(RESULTS_DIR):
-            # only parse the most recent experiment files
-            matches = re.search('^experiment_\d{4}_results.tar$', tar_file)
-            if not matches:
-                continue
-            if not os.path.exists(tar_file.replace('_results.tar', '')):
-                tar = tarfile.open(tar_file)
-                tar.extractall()
-                tar.close()
-            file_name = os.path.basename(tar_file)
-            file_name_parts = file_name.split('_')
-            folder_name = file_name_parts[0] + '_' + file_name_parts[1]
-            experiment_id = file_name_parts[1]
-            experiment_file = '{}experiment_{}/{}_results_index.csv'.format(RESULTS_DIR, experiment_id, experiment_id)
-            if not os.path.exists(experiment_file):
-                continue
-            counter = 0
-            lastLine = None
-            # replay lines from a file to simulate a large number of workers
-            while counter < LINES_PER_FILE:
-                with open(experiment_file, 'r') as result_csv:
-                    print("Uploading data for experiment {0}".format(experiment_id))
-                    # while replaying the file, start from beginning and reset header to None
-                    header = None
-                    for row in result_csv:
-                        # the first line of CSV sheets starts with a header with names of the columns
-                        if not header and row.startswith('experiment_id'):
-                            # set header to current row
-                            header = row
-                            # check if this CSV file has all the columns
-                            # if not, then don't send any lines from this file
-                            if row.count(',') < 28:
-                                counter = LINES_PER_FILE + 1
-                                break
-                            continue
-                        # send row as an experiment result
-                        row = '{},RES'.format(row.strip())
-                        send_row(row)
-                        lastLine = row
-                        counter += 1
-                sleep(1.0*int(args.delay)/1000.0)
-            # send experiment done message
-            if lastLine:
-                row = '{},DONE'.format(lastLine.strip())
-                send_row(row)
+        tar_file = random.choice(os.listdir(RESULTS_DIR))
+        # only parse the most recent experiment files
+        matches = re.search('^experiment_\d{4}_results.tar$', tar_file)
+        if not matches:
+            continue
+        if not os.path.exists(tar_file.replace('_results.tar', '')):
+            tar = tarfile.open(tar_file)
+            tar.extractall()
+            tar.close()
+        file_name = os.path.basename(tar_file)
+        file_name_parts = file_name.split('_')
+        folder_name = file_name_parts[0] + '_' + file_name_parts[1]
+        experiment_id = file_name_parts[1]
+        experiment_file = '{}experiment_{}/{}_results_index.csv'.format(RESULTS_DIR, experiment_id, experiment_id)
+        if not os.path.exists(experiment_file):
+            continue
+        counter = 0
+        lastLine = None
+        # replay lines from a file to simulate a large number of workers
+        while counter < LINES_PER_FILE:
+            with open(experiment_file, 'r') as result_csv:
+                print("Uploading data for experiment {0}".format(experiment_id))
+                # while replaying the file, start from beginning and reset header to None
+                header = None
+                for row in result_csv:
+                    # the first line of CSV sheets starts with a header with names of the columns
+                    if not header and row.startswith('experiment_id'):
+                        # set header to current row
+                        header = row
+                        # check if this CSV file has all the columns
+                        # if not, then don't send any lines from this file
+                        if row.count(',') < 28:
+                            counter = LINES_PER_FILE + 1
+                            break
+                        continue
+                    # send row as an experiment result
+                    row = '{},RES'.format(row.strip())
+                    send_row(row)
+                    lastLine = row
+                    counter += 1
+            sleep(1.0*int(args.delay)/1000.0)
+        # send experiment done message
+        if lastLine:
+            row = '{},DONE'.format(lastLine.strip())
+            send_row(row)
