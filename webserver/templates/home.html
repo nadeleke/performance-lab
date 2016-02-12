@@ -71,7 +71,7 @@
       this.jobs.push(job);
       this.updateChart(job);
     }.bind(this);
-    this.updateChart = function (job) {
+    this.updateChart = _.throttle(function (job) {
       $('#chart').highcharts({
           chart: {
               plotBackgroundColor: null,
@@ -95,10 +95,6 @@
                       style: {
                           color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
                       }
-                  },
-                  animation: {
-                    duration: 2000,
-                    easing: 'easeOutBounce'
                   }
               }
           },
@@ -117,7 +113,7 @@
               }]
           }]
       });
-    }
+    }, 750);
   };
   var model = new ExperimentListModel();
   ko.applyBindings(model);
