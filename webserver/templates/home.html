@@ -3,14 +3,52 @@
 {% block title %}Hasty Experiment{% endblock %}
 
 {% block content %}
-  <select multiple="multiple" width="50" data-bind="options: items"></select>
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h3 class="panel-title">Current Experiment</h3>
+    </div>
+    <div class="panel-body">
+      <table class="table">
+        <tr>
+          <th>Experiment ID</th>
+          <th>Architecture</th>
+          <th>Average Setup Time</th>
+          <th>Average Run Time</th>
+          <th>Average Collect Time</th>
+          <th>Total Number of Jobs</th>
+        </tr>
+        <tbody data-bind="foreach: jobs">
+          <tr>
+            <td data-bind="text: experiment_id"></td>
+            <td data-bind="text: hw_cpu_arch"></td>
+            <td data-bind="text: avg_setup"></td>
+            <td data-bind="text: avg_run"></td>
+            <td data-bind="text: avg_collect"></td>
+            <td data-bind="text: count"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 {% endblock %}
 
 {% block script %}
   <script src="http://ajax.aspnetcdn.com/ajax/knockout/knockout-3.4.0.js"></script>
   <script>
   var ExperimentListModel = function() {
-    this.items = ko.observableArray([]);
+    this.jobs = ko.observableArray([]);
+    this.addJob = function (text) {
+      var words = text.split(',');
+      console.log(words);
+      this.jobs.push({
+        experiment_id: words[0],
+        hw_cpu_arch: words[1],
+        avg_setup: words[2],
+        avg_run: words[3],
+        avg_collect: words[4],
+        count: words[5]
+      })
+    }.bind(this);
   };
   var model = new ExperimentListModel();
   ko.applyBindings(model);
@@ -19,13 +57,13 @@
     $.getJSON("http://ec2-52-89-35-171.us-west-2.compute.amazonaws.com:7379/GET/experiment", function( data ) {
       var input = data['GET'];
       if (input != cache) {
-        model.items.push(input);
+        model.addJob(input);
         cache = input;
       }
     });
   }
   $(function () {
-    setInterval(refresh, 2000);
+    setInterval(refresh, 500);
   });
   </script>
 {% endblock %}
