@@ -102,7 +102,7 @@ object ExperimentResultStream {
     Logger.getLogger("akka").setLevel(Level.WARN)
 
     val brokers = "ec2-52-36-57-191.us-west-2.compute.amazonaws.com:9092"
-    val topics = "m22"
+    val topics = "m24"
     val topicsSet = topics.split(",").toSet
 
     // Create context with 2 second batch interval
