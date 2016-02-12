@@ -43,22 +43,7 @@
 {% block script %}
   <script src="http://ajax.aspnetcdn.com/ajax/knockout/knockout-3.4.0.js"></script>
   <script>
-  var ExperimentListModel = function() {
-    this.jobs = ko.observableArray([]);
-    this.addJob = function (text) {
-      var words = text.split(',');
-      var job = {
-        experiment_id: words[0],
-        hw_cpu_arch: words[1],
-        avg_setup: words[2],
-        avg_run: words[3],
-        avg_collect: words[4],
-        count: words[5]
-      };
-      this.jobs.push(job);
-      this.updateChart(job);
-    }.bind(this);
-    this.updateChart = _.throttle(function (job) {
+    var throttledJobUpdate = _.throttle(function (job) {
       $('#chart').highcharts({
           chart: {
               plotBackgroundColor: null,
@@ -84,7 +69,7 @@
                       }
                   },
                   animation: {
-                      duration: 100
+                      duration: 150
                   }
               }
           },
@@ -103,7 +88,23 @@
               }]
           }]
       });
-    }, 1250);
+    }, 750);
+  var ExperimentListModel = function() {
+    this.jobs = ko.observableArray([]);
+    this.addJob = function (text) {
+      var words = text.split(',');
+      var job = {
+        experiment_id: words[0],
+        hw_cpu_arch: words[1],
+        avg_setup: words[2],
+        avg_run: words[3],
+        avg_collect: words[4],
+        count: words[5]
+      };
+      this.jobs.unshift(job);
+      this.updateChart(job);
+    }.bind(this);
+    this.updateChart = throttledJobUpdate;
   };
   var model = new ExperimentListModel();
   ko.applyBindings(model);
