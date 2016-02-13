@@ -109,17 +109,20 @@ object ExperimentResultStream {
     val sparkConf = new SparkConf().setAppName("spark_stream")
     // val ssc = new StreamingContext(sc, Seconds(1))
     val ssc = new StreamingContext(sparkConf, Milliseconds(500))
-    ssc.checkpoint("hdfs://ec2-52-89-35-171.us-west-2.compute.amazonaws.com:9000/tmp")
+    ssc.checkpoint("hdfs://ec2-52-89-35-171.us-west-2.compute.amazonaws.com:9000/tmp-kafka-checkpoint")
 
     // Create direct kafka stream with brokers and topics
     val kafkaParams = Map[String, String]("metadata.broker.list" -> brokers)
     val kafkaStream = KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](ssc, kafkaParams, topicsSet)
 
+    // Tokenize messages
     val wordsStream = kafkaStream.map(pair => {
       val (_, str) = pair
       str.stripLineEnd.split(",")
     }).persist()
 
+    // Use the experiment id and architecture ask keys to experiment performance metrics
+    // In the case of invalid input or missing columns, mark experiment as done and set fields to None
     val jobStream = wordsStream.map({ pieces =>
       try {
         val experiment_id = pieces(0)
@@ -137,7 +140,7 @@ object ExperimentResultStream {
         case e: ArrayIndexOutOfBoundsException => (";", (MessageType.EXPERIMENT_DONE, None, None, None, None));
       }
     })
-//    jobStream.print()
+
     val latestJobs = jobStream.updateStateByKey(resultTableUpdate)
     // Filter out experiment with missing times and group by experiment id and architecture
     val jobLists = latestJobs.filter(pair => {
@@ -154,16 +157,15 @@ object ExperimentResultStream {
       val words = k.split(";")
       val experiment_id = words(0).toInt
       val hw_cpu_arch = words(1)
-//      val count = jobList.count()
       val count = jobList.map(_._4).sum
-      println(f"jobList key: $k%s, count: $count%d")
+//      println(f"jobList key: $k%s, count: $count%d")
       val (avg_setup, avg_run, avg_collect) = (jobList.map(_._1).sum / count, jobList.map(_._2).sum / count, jobList.map(_._3).sum / count)
       ((experiment_id, hw_cpu_arch), (avg_setup, avg_run, avg_collect, count))
     })
 
     stats.foreachRDD(rdd => {
       rdd.foreachPartition(pairs => {
-        val redisClient = new RedisClient(redisHost, redisPort, secret=Option("1f56a48f2031433b385483b7566c85f1255af5d3dca24fa378a66645534cf8a7"))
+        val redisClient = new RedisClient(redisHost, redisPort, secret=Option(redisKey))
         pairs.foreach(pair => {
           val ((id, arch), (avg_setup, avg_run, avg_collect, num_jobs)) = pair
           redisClient.set("experiment", f"$id%s,$arch%s,$avg_setup%s,$avg_run%s,$avg_collect%s,$num_jobs%s")

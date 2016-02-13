@@ -18,4 +18,5 @@ object Util {
   }
   val redisHost = "ec2-52-34-219-20.us-west-2.compute.amazonaws.com"
   val redisPort = 6379
+  val redisKey = "1f56a48f2031433b385483b7566c85f1255af5d3dca24fa378a66645534cf8a7"
 }
