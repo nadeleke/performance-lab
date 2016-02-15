@@ -102,9 +102,9 @@ if __name__=="__main__":
                             break
                         continue
                     # send row as an experiment result
+                    lastLine = row
                     row = '{},RES'.format(row.strip())
                     send_row(row)
-                    lastLine = row
                     counter += 1
             sleep(1.0*int(args.delay)/1000.0)
         # send experiment done message
