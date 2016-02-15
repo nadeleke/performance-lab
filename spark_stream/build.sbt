@@ -11,8 +11,8 @@ resolvers += "Thrift" at "http://people.apache.org/~rawson/repo/"
 libraryDependencies ++= Seq(
   "org.apache.spark" % "spark-core_2.10" % "1.5.2" % "provided",
   "org.apache.spark" % "spark-sql_2.10" % "1.5.2" % "provided",
-  "org.apache.spark" % "spark-streaming_2.10" % "1.3.0" % "provided",
-  "org.apache.spark" % "spark-streaming-kafka_2.10" % "1.3.0",
+  "org.apache.spark" % "spark-streaming_2.10" % "1.5.2" % "provided",
+  "org.apache.spark" % "spark-streaming-kafka_2.10" % "1.5.2",
   "net.debasishg" %% "redisclient" % "3.0"
 )
 
