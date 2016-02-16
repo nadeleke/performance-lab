@@ -25,6 +25,9 @@ def experiment_list(request):
         e.packages = Jobs.objects.filter(experiment_id=e.experiment_id)[:20]
     return render(request, 'experiment_list.html', context={'experiment_list': experiments})
 
+def video(request):
+    return render(request, 'video.html')
+
 def experiment(request, id):
     avg_dict = {}
     first_factor = None
