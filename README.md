@@ -51,10 +51,12 @@ Real time jobs are simulated by replaying lines from CSV files for historical ex
 
 Spark streaming processes CSV files from S3 and saves computed values for visualization to Cassandra. Spark streaming consumes data from Kafka and calculates the number of jobs and average time for each stage of an experiment as finished jobs are submitted to Kafka. Real time experiment statistics are then written to Redis and pushed to clients. 
   
+## Batch Processing
+CSV file sizes vary from 10 Megabytes to 5 Gigabytes. I chose to use **S3** to store these files to avoid taking up large blocks for small files on HDFS. I process them in **Spark**, dropping rows with null values for any of the performance metrics. The performance metrics are setup, run, and collect times. I calculate averages of these metrics for each factor that has more than one level. 
 
 ## Realtime Processing
 
-Data from **Kafka** is processed with **Spark** micro-batching every 500ms. I set the **Kafka** retention period to 1500ms. 
+Data from **Kafka** is processed with **Spark** micro-batching every 500ms. I set the **Kafka** retention period to 1500ms. I decided to display pie charts of the amount of time each stage of the benchmark takes instead of the p-value or ANOVA tables for experiments. I have implemented a one way ANOVA function in `com.hastyexperiment.ExperimentResultStream` called `calculateOneWayAnova`. It takes as input an experiment ID, a DataFrame of jobs from parseJobs, and a factor name. However, a better analysis of DataMill experiments would involve multiple factors. The experiments themselves should follow a 2k factorial design. Due to the complex design of many experiments involving multiple levels for hardware factors, I have decided to only show pie charts of the time spent on experiments for various architectures. These pie charts are useful for researchers who want to find out which part of their experiments are taking the longest on different architectures.  
 
 ## Command Line Examples
 Start multiple producers to send experiment results to Kafka:
