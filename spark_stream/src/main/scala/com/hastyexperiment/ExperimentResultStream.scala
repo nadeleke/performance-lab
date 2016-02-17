@@ -27,14 +27,15 @@ object ExperimentResultStream {
 
   }
 
-  def calculateStatistics(id:Int, jobDF:DataFrame): Double = {
+  // takes an experiment ID, a DataFrame of jobs from parseJobs, and a factor name as input and calcuates the one way ANOVA p-value for the factor
+  def calculateStatistics(id:Int, jobDF:DataFrame, factor_name:String): Double = {
     // group together trials by the worker ID and calculate average run times
-    val run_time_DF = jobDF.groupBy(jobDF("experiment_id"), jobDF("worker_id"))
+    val run_time_DF = jobDF.groupBy(jobDF("experiment_id"), jobDF(factor_name))
 
     val avg_run_time_DF = run_time_DF.agg("run_time" -> "avg")
-    val summary_DF = jobDF.describe("run_time").toDF()
+    val summary_DF = jobDF.groupBy(jobDF("experiment_id"))
     // get the average run time from summary statistics
-    val overall_avg_run_time = summary_DF.select("run_time").take(2)(1)(0)
+    val overall_avg_run_time = summary_DF.agg("run_time" -> "avg").select("avg(run_time)").first().getInt(0)
     // calculate the degrees of freedom for treatment and residuals
     val deg_freedom_treat = avg_run_time_DF.count() - 1
     val deg_freedom_total = jobDF.count() - 1
@@ -48,7 +49,7 @@ object ExperimentResultStream {
     for (num_repetition <- count_run_time_DF.select("count(run_time)").rdd.map(r => r(0)).collect(); square <- diffSquaredDF.rdd.map(r => r(0)).collect()) {
       SS_treat += num_repetition.toString().toDouble * square.toString().toDouble
     }
-    val joinedDF = jobDF.join(avg_run_time_DF, Seq("experiment_id", "worker_id"))
+    val joinedDF = jobDF.join(avg_run_time_DF, Seq("experiment_id", factor_name))
     // calculate the average regression sum of squares
     val run_time_Tuples = joinedDF.select("run_time","avg(run_time)").rdd.map(r => {
       (r.getDouble(0), r.getDouble(1))
@@ -98,8 +99,8 @@ object ExperimentResultStream {
   }
 
   def main(args: Array[String]) {
-//    Logger.getLogger("org").setLevel(Level.WARN)
-//    Logger.getLogger("akka").setLevel(Level.WARN)
+    //    Logger.getLogger("org").setLevel(Level.WARN)
+    //    Logger.getLogger("akka").setLevel(Level.WARN)
     Logger.getLogger("org").setLevel(Level.OFF)
     Logger.getLogger("akka").setLevel(Level.OFF)
 
@@ -160,7 +161,7 @@ object ExperimentResultStream {
       val experiment_id = words(0).toInt
       val hw_cpu_arch = words(1)
       val count = jobList.map(_._4).sum
-//      println(f"jobList key: $k%s, count: $count%d")
+      //      println(f"jobList key: $k%s, count: $count%d")
       val (avg_setup, avg_run, avg_collect) = (jobList.map(_._1).sum / count, jobList.map(_._2).sum / count, jobList.map(_._3).sum / count)
       ((experiment_id, hw_cpu_arch), (avg_setup, avg_run, avg_collect, count))
     })
