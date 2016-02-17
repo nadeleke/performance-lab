@@ -42,6 +42,9 @@ installation, it may also contain a `setup.sh` script, which is executed before 
 The pipeline obtains experiment data from DataMill using the (gsutil Tool)[https://cloud.google.com/storage/docs/gsutil_install?hl=en#install]. Experiment result tarballs are uploaded to Google Cloud Storage upon completion of all jobs scheduled for the experiment. The gsutil client is used to download historical experiment data which are stored as tarballs for each experiment. 
 
 ## Pipeline Overview
+
+![pipeline](github/images/pipeline.png)
+
 The CSV result files are extracted from experiment result tarballs and uploaded to S3 for batch processing. Individual lines from the CSV result files representing finished jobs are sent to Kafka to simulate workers as jobs are finished. CSV headers provide the schema for the columns, which varies from experiment to experiment. The CSV files are read directly as DataFrames in Spark for processing. 
 
 Real time jobs are simulated by replaying lines from CSV files for historical experiments. For each experiment, finished job data is sent to a Kafka topic as **result** messages until the number of jobs for the experiment reaches a threshold. Once an experiment is done, a **done** message is sent to Kafka to indicate the end of an experiment. 
