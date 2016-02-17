@@ -28,7 +28,7 @@ object ExperimentResultStream {
   }
 
   // takes an experiment ID, a DataFrame of jobs from parseJobs, and a factor name as input and calcuates the one way ANOVA p-value for the factor
-  def calculateStatistics(id:Int, jobDF:DataFrame, factor_name:String): Double = {
+  def calculateOneWayAnova(id:Int, jobDF:DataFrame, factor_name:String): Double = {
     // group together trials by the worker ID and calculate average run times
     val run_time_DF = jobDF.groupBy(jobDF("experiment_id"), jobDF(factor_name))
 
