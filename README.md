@@ -39,7 +39,7 @@ installation, it may also contain a `setup.sh` script, which is executed before 
 
 ## Connecting To Google Cloud Storage
 
-The pipeline obtains experiment data from DataMill using the (gsutil Tool)[https://cloud.google.com/storage/docs/gsutil_install?hl=en#install]. Experiment result tarballs are uploaded to Google Cloud Storage upon completion of all jobs scheduled for the experiment. The gsutil client is used to download historical experiment data which are stored as tarballs for each experiment. 
+The pipeline obtains experiment data from DataMill using the [gsutil Tool](https://cloud.google.com/storage/docs/gsutil_install?hl=en#install). Experiment result tarballs are uploaded to Google Cloud Storage upon completion of all jobs scheduled for the experiment. The gsutil client is used to download historical experiment data which are stored as tarballs for each experiment. 
 
 ## Pipeline Overview
 
