@@ -101,8 +101,13 @@
         avg_collect: words[4],
         count: words[5]
       };
-      this.jobs.unshift(job);
-      this.updateChart(job);
+      var last_job = this.jobs().find(function (j) {
+        return j.experiment_id == job.experiment_id && j.hw_cpu_arch == job.hw_cpu_arch;
+      }) || null;
+      if (last_job == null || last_job.count < job.count) {
+        this.jobs.unshift(job);
+        this.updateChart(job);
+      }
     }.bind(this);
     this.updateChart = throttledJobUpdate;
   };
