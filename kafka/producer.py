@@ -91,21 +91,23 @@ if __name__=="__main__":
                 # while replaying the file, start from beginning and reset header to None
                 header = None
                 for row in result_csv:
+                    # check if this CSV file has all the columns
+                    # if not, then don't send any lines from this file
+                    if row.count(',') < 28:
+                        counter = LINES_PER_FILE + 1
+                        break
                     # the first line of CSV sheets starts with a header with names of the columns
                     if not header and row.startswith('experiment_id'):
                         # set header to current row
                         header = row
-                        # check if this CSV file has all the columns
-                        # if not, then don't send any lines from this file
-                        if row.count(',') < 28:
-                            counter = LINES_PER_FILE + 1
-                            break
                         continue
                     # send row as an experiment result
                     lastLine = row
                     row = '{},RES'.format(row.strip())
                     send_row(row)
                     counter += 1
+            if not lastLine:
+                break
             sleep(1.0*int(args.delay)/1000.0)
         # send experiment done message
         if lastLine:
