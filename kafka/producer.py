@@ -50,7 +50,7 @@ if __name__=="__main__":
     # get a client
     print("Connecting to Kafka node {0}:{1}".format(args.host, args.port))
     kafka = KafkaClient("{0}:{1}".format(args.host, args.port))
-    producer = SimpleProducer(kafka, async=True, batch_send_every_n=BATCH_SIZE, async_queue_maxsize=BATCH_SIZE*10)
+    producer = SimpleProducer(kafka, async=True, batch_send_every_n=BATCH_SIZE, async_queue_maxsize=BATCH_SIZE*100)
 
     def send_row(row):
         if args.partition_key:
