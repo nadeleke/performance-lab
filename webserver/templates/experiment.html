@@ -34,7 +34,7 @@
   <select id="list">
   {% for key, factor in factors.items %}
     {% if factor in label_map %}
-    <option value="{{ key }}">{{ factor }}</option>
+    <option value="{{ key }}" {% if key == first_factor%}selected{% endif %}>{{ factor }}</option>
     {% endif %}
   {% endfor %}
   </select>
