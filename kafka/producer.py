@@ -33,7 +33,8 @@ def chunk_iterable(A,n):
 RESULTS_DIR='/var/datamill/results/'
 # RESULTS_DIR='/home/ubuntu/results/'
 BATCH_SIZE = 1000
-LINES_PER_FILE = BATCH_SIZE * 10
+QUEUE_SIZE = BATCH_SIZE*100
+LINES_PER_FILE = QUEUE_SIZE*5
 if __name__=="__main__":
 
     # arg parsing
@@ -50,7 +51,7 @@ if __name__=="__main__":
     # get a client
     print("Connecting to Kafka node {0}:{1}".format(args.host, args.port))
     kafka = KafkaClient("{0}:{1}".format(args.host, args.port))
-    producer = SimpleProducer(kafka, async=True, batch_send_every_n=BATCH_SIZE, async_queue_maxsize=BATCH_SIZE*100)
+    producer = SimpleProducer(kafka, async=True, batch_send_every_n=BATCH_SIZE, async_queue_maxsize=QUEUE_SIZE)
 
     def send_row(row):
         if args.partition_key:
