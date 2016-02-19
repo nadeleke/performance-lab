@@ -32,7 +32,7 @@ installation, it may also contain a `setup.sh` script, which is executed before 
 	* > 150,000 jobs
 	* 500 GB from 2013 -2016
 * Real-time data
-	* Average 56 jobs / sec
+	* Average 2,300 jobs / sec
 	* 16 simulated workers
 
 ![kafka](github/images/kafka.png)
