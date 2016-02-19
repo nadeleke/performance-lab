@@ -67,9 +67,6 @@
                       style: {
                           color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
                       }
-                  },
-                  animation: {
-                      duration: 350
                   }
               }
           },
@@ -99,7 +96,7 @@
         avg_setup: words[2],
         avg_run: words[3],
         avg_collect: words[4],
-        count: words[5]
+        count: parseInt(words[5])
       };
       var last_job = this.jobs().find(function (j) {
         return j.experiment_id == job.experiment_id && j.hw_cpu_arch == job.hw_cpu_arch;
