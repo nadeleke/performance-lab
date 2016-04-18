@@ -41,7 +41,7 @@ The pipeline obtains experiment data from DataMill using the [gsutil Tool](https
 
 ## Pipeline Overview
 
-![pipeline](github/images/pipeline.png)
+![pipeline](github/images/pipeline.png?v=2)
 
 The CSV result files are extracted from experiment result tarballs and uploaded to S3 for batch processing. Individual lines from the CSV result files representing finished jobs are sent to Kafka to simulate workers as jobs are finished. CSV headers provide the schema for the columns, which varies from experiment to experiment. The CSV files are read directly as DataFrames in Spark for processing. 
 
