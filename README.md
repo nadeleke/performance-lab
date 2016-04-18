@@ -28,8 +28,6 @@ If the package requires a setup procedure such as decompression, compilation, or
 installation, it may also contain a `setup.sh` script, which is executed before `run.sh`.
 
 * Historyical Data
-	* > 1,600 experiments
-	* > 150,000 jobs
 	* 500 GB from 2013 -2016
 * Real-time data
 	* Average 2,300 jobs / sec
@@ -78,4 +76,4 @@ $SPARK_HOME/bin/spark-submit --packages com.databricks:spark-csv_2.10:1.3.0,Targ
 ```
 
 ## Presentation Deck
-My presentation slides are available at https://docs.google.com/presentation/d/1_16D0pVICbkJFBPf2I970UHLlTXXJa0Gp0oHZcTjb94/pub?start=false&loop=false&delayms=3000
+My presentation slides are available at https://docs.google.com/presentation/d/16Cj8dXRG0MKeDmQfVPRXGk25Tkhr_DuWOgBfK37i5rk/pub?start=false&loop=false&delayms=3000&slide=id.p
