@@ -49,7 +49,7 @@ The CSV result files are extracted from experiment result tarballs and uploaded 
 
 Real time jobs are simulated by replaying lines from CSV files for historical experiments. For each experiment, finished job data is sent to a Kafka topic as **result** messages until the number of jobs for the experiment reaches a threshold. Once an experiment is done, a **done** message is sent to Kafka to indicate the end of an experiment. 
 
-Spark streaming processes CSV files from S3 and saves computed values for visualization to Cassandra. Spark streaming consumes data from Kafka and calculates the number of jobs and average time for each stage of an experiment as finished jobs are submitted to Kafka. Real time experiment statistics are then written to Redis and pushed to clients. 
+Spark batch processes CSV files from S3 and saves computed values for visualization to Cassandra. Spark streaming consumes data from Kafka and calculates the number of jobs and average time for each stage of an experiment as finished jobs are submitted to Kafka. Real time experiment statistics are then written to Redis and pushed to clients. 
   
 ## Batch Processing
 CSV file sizes vary from 10 Megabytes to 5 Gigabytes. I chose to use **S3** to store these files to avoid taking up large blocks for small files on HDFS. I process them in **Spark**, dropping rows with null values for any of the performance metrics. The performance metrics are setup, run, and collect times. I calculate averages of these metrics for each factor that has more than one level. 
