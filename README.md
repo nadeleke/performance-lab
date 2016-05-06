@@ -1,11 +1,11 @@
-Hasty Experiment
+Performance Lab
 =================
 
-[Hasty Experiment](http://www.hastyexperiment.info/) is my big data project for the January 2016 session of [Insight Data Engineering](http://insightdataengineering.com/)
+Performance Lab is my big data project for the January 2016 session of [Insight Data Engineering](http://insightdataengineering.com/)
 
 
 ## Intro
-**Hasty Experiment** is an open-source data pipeline that integrates with [DataMill](https://datamill.uwaterloo.ca/) for analysis of historical and current experiments.
+**Performance Lab** is an open-source data pipeline that integrates with [DataMill](https://datamill.uwaterloo.ca/) for analysis of historical and current experiments.
 It makes use of the following technologies:
 - Apache Kafka 0.8.2.2
 - Apache Cassandra 2.2.4
@@ -17,9 +17,6 @@ It makes use of the following technologies:
 
 For an explanation of the DataMill infrastructure please read [DataMill: Rigorous Performance Evaluation Made Easy](https://uwaterloo.ca/embedded-software-group/sites/ca.embedded-software-group/files/uploads/files/icpe13-datamill.pdf)
 and the most recent paper, [DataMill: A Distributed Heterogeneous Infrastructure for Robust Experimentation](http://yuguangzhang.com/blog/wp-content/uploads/2015/11/document.pdf)
-
-## Live Demo
-A live demo is currently (February 2014) running at http://hastyexperiment.info
 
 ## The Data
 Experiment results are stored in compressed gzip tar files. These files range from 10 Megabytes to 5 Gigabytes for a typical experiment. The CSV file within these tarballs contain 29 columns of factors and performance metrics. The key performance metrics captured by the infrastructure are setup, run, and collect time. There are only two scripts that every DataMill benchmark package must contain, `run.sh` and
