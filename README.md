@@ -54,7 +54,11 @@ CSV file sizes vary from 10 Megabytes to 5 Gigabytes. I chose to use **S3** to s
 
 ## Realtime Processing
 
-Data from **Kafka** is processed with **Spark** micro-batching. The **Kafka** retention period is set to 3 seconds to prevent Kafka logs from filling up available disk space. Instead of displaying the p-value or ANOVA tables for experiments, I decided to show pie charts of the amount of time each stage of the benchmark takes. I have implemented a one way ANOVA function in `com.hastyexperiment.ExperimentResultStream` called `calculateOneWayAnova`. It takes as input an experiment ID, a DataFrame of jobs from parseJobs, and a factor name. However, a better analysis of DataMill experiments would involve multiple factors. Although a 2k factorial design is ideal for multiple factors, many experiments incorporate custom software factors. In addition, due to the design of experiments involving multiple levels for hardware factors, I have decided to only show pie charts of the time spent on experiments for various architectures. These pie charts are useful for researchers who want to find out which part of their experiments are taking the longest on different architectures.  
+Data from **Kafka** is processed with **Spark** micro-batching. The **Kafka** retention period is set to 3 seconds to prevent Kafka logs from filling up available disk space. Instead of displaying the p-value or ANOVA tables for experiments, I decided to show pie charts of the amount of time each stage of the benchmark takes. I have implemented a one way ANOVA function in `com.hastyexperiment.ExperimentResultStream` called `calculateOneWayAnova`. It takes as input an experiment ID, a DataFrame of jobs from parseJobs, and a factor name. However, a better analysis of DataMill experiments would involve multiple factors. Although a 2k factorial design is ideal for multiple factors, many experiments incorporate custom software factors. In addition, due to the design of experiments involving multiple levels for hardware factors, I have decided to only show pie charts of the time spent on experiments for various architectures. These pie charts are useful for researchers who want to find out which part of their experiments are taking the longest on different architectures.
+  
+## Video
+
+[![Pipeline Demo Video](github/images/video.png)](http://yuguangzhang.com/videos/performance-lab.html)
 
 ## Command Line Examples
 Start multiple producers to send experiment results to Kafka:
